@@ -52,6 +52,54 @@ When the user provides `REPO_URL`, you MUST:
 
 ---
 
+## 🔀 PARALLEL EXECUTION MODE (Worktrees)
+
+**For running multiple agents in parallel, each agent MUST work in its own worktree.**
+
+### Setup for Parallel Execution
+
+Before starting, create a dedicated worktree for this agent:
+
+```bash
+# From main repo
+./.claude/scripts/setup-agent-worktree.sh {repo-name}
+# Example: ./.claude/scripts/setup-agent-worktree.sh tldraw
+
+# This outputs the worktree path and agent ID
+# Then cd into the worktree and run normally
+```
+
+### Key Differences in Worktree Mode
+
+1. **Task Naming**: Use `task-{repo-name}-{timestamp}` instead of sequential numbers
+2. **Working Directory**: `/tmp/sample-creation-{agent-id}/` (includes agent ID)
+3. **Final Merge**: After completion, run `./.claude/scripts/merge-samples.sh {agent-id}` from main repo
+4. **Isolation**: Each agent has its own git branch and workspace
+
+### Worktree Detection
+
+The agent automatically detects if running in worktree mode by checking for `.agent-state.json`:
+
+```json
+{
+  "agent_id": "agent-tldraw-1701234567-abc123",
+  "worktree_path": "/path/to/worktrees/agent-tldraw-...",
+  "working_dir": "/tmp/sample-creation-agent-tldraw-1701234567-abc123",
+  "task_id": "task-tldraw-1701234567",
+  "status": "initialized"
+}
+```
+
+### Benefits of Worktree Mode
+
+- ✅ **No race conditions** - Each agent uses unique task IDs
+- ✅ **No overwrites** - Isolated workspaces
+- ✅ **Safe merging** - Atomic task number assignment with file locking
+- ✅ **Easy cleanup** - Remove worktrees after completion
+- ✅ **Git safety** - Each agent on separate branch
+
+---
+
 ## 📥 INPUT FORMAT
 
 ```
@@ -122,14 +170,55 @@ Then **immediately begin executing Phase 1**.
 ### Step 1.1: Setup (1 min)
 
 ```bash
-# Create working directory
-TIMESTAMP=$(date +%s)
-mkdir -p /tmp/sample-creation-$TIMESTAMP
-cd /tmp/sample-creation-$TIMESTAMP
+# Detect if running in worktree mode
+MAIN_REPO=$(git rev-parse --show-toplevel)
+AGENT_STATE="${MAIN_REPO}/.agent-state.json"
 
-# Determine next task number
-TASK_NUM=$(ls -d /path/to/samples/task-* 2>/dev/null | wc -l | xargs expr 1 +)
-echo "Creating task-$TASK_NUM"
+if [ -f "$AGENT_STATE" ]; then
+    # Worktree mode - use agent ID for naming
+    AGENT_ID=$(cat "$AGENT_STATE" | grep -o '"agent_id": *"[^"]*"' | sed 's/.*: *"\(.*\)"/\1/')
+    TARGET_REPO=$(cat "$AGENT_STATE" | grep -o '"target_repo": *"[^"]*"' | sed 's/.*: *"\(.*\)"/\1/')
+    TIMESTAMP=$(date +%s)
+    TASK_ID="task-${TARGET_REPO}-${TIMESTAMP}"
+    WORK_DIR="/tmp/sample-creation-${AGENT_ID}"
+    
+    echo "🔀 WORKTREE MODE DETECTED"
+    echo "   Agent ID: ${AGENT_ID}"
+    echo "   Target Repo: ${TARGET_REPO}"
+    echo "   Task ID: ${TASK_ID}"
+    echo ""
+else
+    # Single mode - use sequential numbering with lock
+    echo "📝 SINGLE MODE (No worktree detected)"
+    TIMESTAMP=$(date +%s)
+    LOCKFILE="/tmp/nvidea-poc-task.lock"
+    
+    # Atomic task number assignment
+    (
+        flock -x 200 || exit 1
+        TASK_NUM=$(ls -d "${MAIN_REPO}/samples/task-"* 2>/dev/null | wc -l)
+        TASK_NUM=$((TASK_NUM + 1))
+        echo $TASK_NUM > /tmp/current-task-num
+    ) 200>"$LOCKFILE" 2>/dev/null || {
+        # Fallback if flock not available
+        TASK_NUM=$(ls -d "${MAIN_REPO}/samples/task-"* 2>/dev/null | wc -l)
+        TASK_NUM=$((TASK_NUM + 1))
+    }
+    
+    TASK_ID="task-$(cat /tmp/current-task-num 2>/dev/null || echo $TASK_NUM)"
+    WORK_DIR="/tmp/sample-creation-${TIMESTAMP}"
+    
+    echo "   Task ID: ${TASK_ID}"
+    echo ""
+fi
+
+# Create working directory
+mkdir -p "$WORK_DIR"
+cd "$WORK_DIR"
+
+echo "✓ Working Directory: ${WORK_DIR}"
+echo "✓ Creating: ${TASK_ID}"
+echo ""
 ```
 
 ### Step 1.2: Clone Repository (2 min)
@@ -668,30 +757,50 @@ PROGRESS: [████████░░] 80% Complete
 
 ```bash
 # Navigate to project root
-cd /path/to/nvidea-poc
+cd "${MAIN_REPO}"
 
-# Determine next task number
-TASK_NUM=$(ls -d samples/task-* 2>/dev/null | wc -l | xargs expr 1 +)
+# In worktree mode, create temporary task ID directory
+# (will be renamed during merge to sequential number)
+if [ -f ".agent-state.json" ]; then
+    # Worktree mode - use task ID from Phase 1
+    SAMPLE_DIR="samples/${TASK_ID}"
+    echo "🔀 Worktree Mode: Creating ${TASK_ID}"
+    echo "   (Will be renumbered during merge)"
+else
+    # Single mode - use sequential number with lock
+    LOCKFILE="/tmp/nvidea-poc-task.lock"
+    (
+        flock -x 200 || exit 1
+        TASK_NUM=$(ls -d samples/task-* 2>/dev/null | wc -l)
+        TASK_NUM=$((TASK_NUM + 1))
+        echo $TASK_NUM > /tmp/current-task-num
+    ) 200>"$LOCKFILE" 2>/dev/null || {
+        TASK_NUM=$(ls -d samples/task-* 2>/dev/null | wc -l)
+        TASK_NUM=$((TASK_NUM + 1))
+    }
+    SAMPLE_DIR="samples/task-$(cat /tmp/current-task-num 2>/dev/null || echo $TASK_NUM)"
+    echo "📝 Single Mode: Creating ${SAMPLE_DIR}"
+fi
 
 # Create directory
-mkdir -p samples/task-$TASK_NUM
+mkdir -p "$SAMPLE_DIR"
 ```
 
 ### Step 5.3: Copy All Files (3 min)
 
 ```bash
-SAMPLE_DIR="samples/task-$TASK_NUM"
+# SAMPLE_DIR is set from previous step
 
 # Copy all generated files
-cp /tmp/sample-creation-*/metadata.json $SAMPLE_DIR/
-cp /tmp/sample-creation-*/repo/fix.patch $SAMPLE_DIR/
-cp /tmp/sample-creation-*/repo/tests.patch $SAMPLE_DIR/
-cp /tmp/sample-creation-*/ideal_trajectory.json $SAMPLE_DIR/
-cp /tmp/sample-creation-*/Dockerfile $SAMPLE_DIR/
-cp /tmp/sample-creation-*/run.sh $SAMPLE_DIR/
+cp "${WORK_DIR}/metadata.json" "$SAMPLE_DIR/"
+cp "${WORK_DIR}/repo/fix.patch" "$SAMPLE_DIR/"
+cp "${WORK_DIR}/repo/tests.patch" "$SAMPLE_DIR/"
+cp "${WORK_DIR}/ideal_trajectory.json" "$SAMPLE_DIR/"
+cp "${WORK_DIR}/Dockerfile" "$SAMPLE_DIR/"
+cp "${WORK_DIR}/run.sh" "$SAMPLE_DIR/"
 
 # Make run.sh executable
-chmod +x $SAMPLE_DIR/run.sh
+chmod +x "$SAMPLE_DIR/run.sh"
 ```
 
 ### Step 5.4: Validate Files (5 min)

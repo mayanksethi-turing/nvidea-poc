@@ -57,7 +57,28 @@ FROM golang:1.21
 
 ### Task 4.2: Generate Dockerfile (15 min)
 
-**Template structure:**
+**IMPORTANT: For parallel execution, ensure unique Docker image naming!**
+
+#### Docker Image Naming Convention
+
+To prevent collisions when multiple agents build simultaneously:
+
+```bash
+# Get task ID from environment (set in Phase 1)
+TASK_ID="${TASK_ID:-task-unknown}"
+
+# Image naming convention
+IMAGE_NAME="nvidea-poc-${TASK_ID}"
+IMAGE_TAG="validation"
+
+# Build with unique name
+docker build -t "${IMAGE_NAME}:${IMAGE_TAG}" .
+
+# Run with unique name
+docker run --rm "${IMAGE_NAME}:${IMAGE_TAG}"
+```
+
+#### Template structure:
 
 ```dockerfile
 # 1. Base image
@@ -220,22 +241,46 @@ CMD ["go", "test", "./..."]
 
 **Purpose:** Script that runs the fail→pass validation cycle
 
+**IMPORTANT: Use unique Docker image names to prevent collisions!**
+
 **Template:**
 
 ```bash
 #!/bin/bash
 set -e  # Exit on any error
 
+# Generate unique image name from task directory or metadata
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TASK_NAME=$(basename "$SCRIPT_DIR")
+
+# If metadata.json exists, use repo name for more readable image name
+if [ -f "$SCRIPT_DIR/metadata.json" ] && command -v jq &> /dev/null; then
+    REPO_NAME=$(jq -r '.repo' "$SCRIPT_DIR/metadata.json" | sed 's|.*/||' | sed 's|\.git||')
+    IMAGE_NAME="nvidea-poc-${REPO_NAME}-${TASK_NAME}"
+else
+    IMAGE_NAME="nvidea-poc-${TASK_NAME}"
+fi
+
 echo "======================================"
-echo "Building Docker Image"
+echo "Building Docker Image: ${IMAGE_NAME}"
 echo "======================================"
-docker build -t bug-fix-sample .
+docker build -t "$IMAGE_NAME" .
 
 echo ""
 echo "======================================"
 echo "Creating Container"
 echo "======================================"
-CONTAINER_ID=$(docker create bug-fix-sample)
+CONTAINER_ID=$(docker create "$IMAGE_NAME")
+
+# Cleanup function
+cleanup() {
+    echo ""
+    echo "======================================"
+    echo "Cleaning up container..."
+    echo "======================================"
+    docker rm -f $CONTAINER_ID 2>/dev/null || true
+}
+trap cleanup EXIT
 
 echo ""
 echo "======================================"

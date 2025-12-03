@@ -135,21 +135,21 @@ These scripts implement a worktree-based solution with atomic merging.
 **Terminal 1:**
 ```bash
 cd /path/to/nvidea-poc
-./scripts/setup-agent-worktree.sh tldraw
+./.claude/scripts/setup-agent-worktree.sh tldraw
 cd worktrees/agent-tldraw-*/
 ```
 
 **Terminal 2:**
 ```bash
 cd /path/to/nvidea-poc
-./scripts/setup-agent-worktree.sh django
+./.claude/scripts/setup-agent-worktree.sh django
 cd worktrees/agent-django-*/
 ```
 
 **Terminal 3:**
 ```bash
 cd /path/to/nvidea-poc
-./scripts/setup-agent-worktree.sh react
+./.claude/scripts/setup-agent-worktree.sh react
 cd worktrees/agent-react-*/
 ```
 
@@ -176,9 +176,9 @@ After agents complete, from the **main repo** directory:
 cd /path/to/nvidea-poc
 
 # Merge each sample (one at a time, safely)
-./scripts/merge-samples.sh agent-tldraw-1701234567-abc123
-./scripts/merge-samples.sh agent-django-1701234568-def456
-./scripts/merge-samples.sh agent-react-1701234569-ghi789
+./.claude/scripts/merge-samples.sh agent-tldraw-1701234567-abc123
+./.claude/scripts/merge-samples.sh agent-django-1701234568-def456
+./.claude/scripts/merge-samples.sh agent-react-1701234569-ghi789
 
 # Results will be in:
 # samples/task-4/  (from tldraw)
@@ -207,9 +207,9 @@ git commit -m "Add samples from parallel agent run (task-4, task-5, task-6)"
 
 ```bash
 # Clean up all worktrees
-./scripts/cleanup-agent-worktree.sh agent-tldraw-1701234567-abc123
-./scripts/cleanup-agent-worktree.sh agent-django-1701234568-def456
-./scripts/cleanup-agent-worktree.sh agent-react-1701234569-ghi789
+./.claude/scripts/cleanup-agent-worktree.sh agent-tldraw-1701234567-abc123
+./.claude/scripts/cleanup-agent-worktree.sh agent-django-1701234568-def456
+./.claude/scripts/cleanup-agent-worktree.sh agent-react-1701234569-ghi789
 ```
 
 ---
@@ -271,10 +271,17 @@ nvidea-poc/
 │   │   └── ... (full repo copy)
 │   ├── agent-django-.../     # Agent 2 workspace
 │   └── agent-react-.../      # Agent 3 workspace
-├── scripts/
-│   ├── setup-agent-worktree.sh
-│   ├── merge-samples.sh
-│   └── cleanup-agent-worktree.sh
+├── .claude/
+│   ├── scripts/              # Management scripts
+│   │   ├── setup-agent-worktree.sh
+│   │   ├── merge-samples.sh
+│   │   ├── cleanup-agent-worktree.sh
+│   │   └── README.md
+│   ├── docs/
+│   │   └── ARCHITECTURE_DIAGRAM.txt
+│   ├── commands/
+│   │   └── task-coordinator.md
+│   └── agents/
 └── .samples-merge.lock       # Temporary lock file
 ```
 
@@ -284,7 +291,7 @@ nvidea-poc/
 
 1. **Unique naming:** Always provide a descriptive repo name to `setup-agent-worktree.sh`
 2. **Merge order:** Doesn't matter! The lock ensures correct numbering
-3. **Check status:** Run `./scripts/cleanup-agent-worktree.sh` without args to list all worktrees
+3. **Check status:** Run `./.claude/scripts/cleanup-agent-worktree.sh` without args to list all worktrees
 4. **Failed agents:** If an agent fails, just cleanup the worktree and try again
 5. **Disk space:** Worktrees are full repo copies, ensure you have enough space
 

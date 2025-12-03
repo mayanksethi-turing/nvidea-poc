@@ -28,3 +28,15 @@ Thumbs.db
 settings.local.json
 .claude/settings.local.json
 
+# Agent Worktrees (parallel execution isolation)
+worktrees/
+
+# Worktree lock files
+*.worktree.lock
+
+# Agent temporary state
+.agent-state.json
+
+# Sample merge lock
+.samples-merge.lock
+
