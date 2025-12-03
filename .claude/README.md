@@ -23,12 +23,13 @@ Generate training samples for AI coding agents by:
 .claude/
 ├── commands/
 │   └── task-coordinator.md   # Main orchestrator (START HERE)
-└── agents/
-    ├── repo-analyzer.md      # Phase 1: Analyze repository
-    ├── patch-extractor.md    # Phase 2: Extract patches
-    ├── trajectory-generator.md # Phase 3: Generate solution steps
-    ├── docker-builder.md     # Phase 4: Create Docker environment
-    └── validator.md          # Phase 5: Validate complete sample
+├── agents/
+│   ├── repo-analyzer.md      # Phase 1: Analyze repository
+│   ├── patch-extractor.md    # Phase 2: Extract patches
+│   ├── trajectory-generator.md # Phase 3: Generate solution steps
+│   ├── docker-builder.md     # Phase 4: Create Docker environment
+│   └── validator.md          # Phase 5: Validate complete sample
+└── local.settings.json       # Auto-approve all permissions
 ```
 
 ---
@@ -193,9 +194,23 @@ Study existing samples to understand quality standards:
 ✨ **Fully Autonomous** - Just provide REPO_URL, Claude does everything  
 ✨ **Sequential Execution** - All 5 phases run automatically  
 ✨ **No Manual Intervention** - No confirmation prompts between phases  
+✨ **Auto-Approved Permissions** - `local.settings.json` bypasses all prompts  
 ✨ **Self-Validating** - Ensures fail→pass cycle works  
 ✨ **Multi-Language** - Detects and adapts to project type  
 ✨ **Error Recovery** - Attempts retry before reporting failures  
+
+---
+
+## 🔓 Permissions Configuration
+
+The `.claude/local.settings.json` file is configured to:
+
+- ✅ **Auto-approve all permissions** (network, git_write, all)
+- ✅ **Bypass sandbox restrictions** for full filesystem access
+- ✅ **Disable confirmation prompts** for autonomous execution
+- ✅ **Enable auto-execution mode** for immediate command execution
+
+This ensures Claude can execute all commands without waiting for user approval.
 
 ---
 

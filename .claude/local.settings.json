@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "mode": "auto_approve_all",
+    "network": true,
+    "git_write": true,
+    "all": true
+  },
+  "execution": {
+    "auto_execute": true,
+    "require_confirmation": false,
+    "sandbox": false
+  },
+  "coordinator": {
+    "autonomous_mode": true,
+    "skip_phase_approval": true,
+    "auto_proceed": true
+  },
+  "description": "Local settings for Claude agent system - bypasses all permission prompts for autonomous execution"
+}
+
