@@ -1,6 +1,12 @@
 # Phase 3: Trajectory Generator Agent
 
-**Role:** Create a realistic ideal_trajectory.json showing how an AI agent would solve this bug step-by-step.
+**Role:** Create realistic trajectory files showing both successful and failed AI agent problem-solving approaches.
+
+**⚠️ CRITICAL: You MUST generate BOTH files:**
+- ✅ `ideal_trajectory.json` - Perfect solution trajectory
+- ✅ `failed_trajectory.json` - Realistic failure trajectory
+
+**Both files are REQUIRED for every task sample.**
 
 ---
 
@@ -210,6 +216,8 @@ Organize actions into logical phases:
 
 ## Your Tasks
 
+**⚠️ REMINDER: Generate BOTH ideal_trajectory.json AND failed_trajectory.json**
+
 ### Task 3.1: Analyze the Fix (10 min)
 
 Study fix.patch and tests.patch:
@@ -350,7 +358,9 @@ elapsed_seconds += duration_seconds
 
 ---
 
-### Task 3.7: Assemble Complete Trajectory (10 min)
+### Task 3.7: Assemble Complete IDEAL Trajectory (10 min)
+
+Save as `ideal_trajectory.json`:
 
 ```json
 {
@@ -372,9 +382,80 @@ elapsed_seconds += duration_seconds
 
 ---
 
+### Task 3.8: Generate FAILED Trajectory (15 min) 🚨 MANDATORY
+
+**⚠️ This step is REQUIRED - DO NOT skip!**
+
+Create a realistic failure scenario to train the model on what NOT to do.
+
+#### Steps
+
+1. **Copy ideal_trajectory.json as base**
+   ```bash
+   cp ideal_trajectory.json failed_trajectory.json
+   ```
+
+2. **Select appropriate failure mode:**
+   | Bug Type | Recommended Failure Mode |
+   |----------|-------------------------|
+   | Null pointer | Skip null check, incomplete fix |
+   | Multi-file refactor | Update some files, miss others |
+   | Context propagation | Forget to pass context somewhere |
+   | CSS/UI bug | Fix one browser, ignore others |
+   | Schema change | Wrong type assumption |
+   | Any bug | Skip test verification (most common) |
+
+3. **Modify the trajectory:**
+   - **Remove** test execution actions (most common failure)
+   - **Shorten** exploration (miss key files)
+   - **Modify** thoughts to show hasty reasoning:
+     - "This should fix it" → instead of → "Let me verify this works"
+     - "The error is gone" → instead of → "The root cause is addressed"
+   - **Add** incorrect assumptions in thoughts
+   - **Remove or modify** 1-2 solution actions (incomplete fix)
+
+4. **Common modifications:**
+   ```diff
+   - "thought": "Running tests to verify the fix resolves the issue"
+   + "thought": "The fix looks correct, should be good now"
+   
+   - {"action": "execute_terminal_command", "details": {"command": "npm test"}}
+   + // REMOVED - Agent skipped verification
+   ```
+
+5. **Add failure mode to tags:**
+   ```json
+   "tags": {
+     "difficulty": "medium",
+     "issueType": "BugFix",
+     "techTags": ["TypeScript", "React"],
+     "failureMode": "Incomplete Solution / Inadequate Verification"
+   }
+   ```
+
+6. **Common failure modes:**
+   - `"Incomplete Solution / Inadequate Verification"` - Most common
+   - `"Partial Fix / Missing Edge Cases"`
+   - `"Wrong Root Cause / Incorrect Fix"`
+   - `"Insufficient Testing / No Verification"`
+   - `"Multi-file Change / Missed Files"`
+
+7. **Save as `failed_trajectory.json`**
+
+#### Validation for Failed Trajectory
+
+- [ ] failed_trajectory.json exists
+- [ ] Has 10-30% fewer actions than ideal (typically removed test/verification)
+- [ ] Thoughts show hasty or incorrect reasoning
+- [ ] Tags include "failureMode" field
+- [ ] File is valid JSON
+
+---
+
 ## Validation Checklist
 
-- [ ] All actions have required fields
+### For ideal_trajectory.json:
+- [ ] All actions have required fields (action, details, thought, timestamp, elapsed_seconds, duration_seconds, partition)
 - [ ] Timestamps are sequential
 - [ ] elapsed_seconds increases monotonically
 - [ ] Partitions are assigned correctly
@@ -383,7 +464,21 @@ elapsed_seconds += duration_seconds
 - [ ] newCode matches what's in fix.patch
 - [ ] Test actions match tests.patch
 - [ ] Total elapsed time is realistic (5-15 minutes typical)
-- [ ] trajectory is valid JSON
+- [ ] File is valid JSON
+
+### For failed_trajectory.json:
+- [ ] **File exists** (MANDATORY)
+- [ ] Has appropriate failure mode in tags.failureMode
+- [ ] Has fewer actions than ideal (typically 10-30% less)
+- [ ] Thoughts show hasty or incorrect reasoning
+- [ ] Missing test verification OR incomplete fix
+- [ ] File is valid JSON
+
+### Both files:
+- [ ] **Both ideal_trajectory.json AND failed_trajectory.json exist**
+- [ ] Both have same taskIssue
+- [ ] Both have same difficulty, issueType, techTags
+- [ ] Failed has additional "failureMode" in tags
 
 ---
 
@@ -392,14 +487,26 @@ elapsed_seconds += duration_seconds
 ```json
 {
   "status": "success",
-  "trajectory_path": "ideal_trajectory.json",
-  "trajectory": {
+  "files_generated": [
+    "ideal_trajectory.json",
+    "failed_trajectory.json"
+  ],
+  "ideal_trajectory": {
     "annotationTrace": [ /* full array */ ],
     "taskIssue": "...",
     "tags": { /* ... */ }
   },
+  "failed_trajectory": {
+    "annotationTrace": [ /* modified array */ ],
+    "taskIssue": "...",
+    "tags": { 
+      /* ... */ 
+      "failureMode": "Incomplete Solution / Inadequate Verification"
+    }
+  },
   "stats": {
-    "total_actions": 18,
+    "ideal_actions": 18,
+    "failed_actions": 14,
     "exploration_actions": 6,
     "solution_actions": 8,
     "test_actions": 3,
@@ -459,63 +566,13 @@ elapsed_seconds += duration_seconds
 
 ---
 
-### Task 3.8: Generate failed_trajectory.json (15 min)
-
-**REQUIRED: Create a failed trajectory alongside the ideal trajectory.**
-
-#### Steps
-
-1. **Copy ideal_trajectory.json as base**
-
-2. **Select appropriate failure mode:**
-   | Bug Type | Recommended Failure Mode |
-   |----------|-------------------------|
-   | Null pointer | Skip null check, incomplete fix |
-   | Multi-file refactor | Update some files, miss others |
-   | Context propagation | Forget to pass context somewhere |
-   | CSS/UI bug | Fix one browser, ignore others |
-   | Schema change | Wrong type assumption |
-   | Any bug | Skip test verification |
-
-3. **Modify the trajectory:**
-   - **Remove** test execution actions
-   - **Shorten** exploration (miss key files)
-   - **Modify** thoughts to show hasty reasoning:
-     - "This should fix it" → instead of → "Let me verify this works"
-     - "The error is gone" → instead of → "The root cause is addressed"
-   - **Add** incorrect assumptions in thoughts
-
-4. **Common modifications:**
-   ```diff
-   - "thought": "Running tests to verify the fix resolves the issue"
-   + "thought": "The fix looks correct, should be good now"
-   
-   - {"action": "execute_terminal_command", "details": {"command": "npm test"}}
-   + // REMOVED - Agent skipped verification
-   ```
-
-5. **Save as `failed_trajectory.json`**
-
-#### Output Format
-
-```json
-{
-  "annotationTrace": [
-    // Modified actions showing failure pattern
-  ],
-  "taskIssue": "{ same as ideal }",
-  "tags": {
-    "difficulty": "{ same as ideal }",
-    "issueType": "BugFix",
-    "techTags": [ /* same */ ],
-    "failureMode": "Incomplete Solution / Inadequate Verification"
-  }
-}
-```
-
 ---
 
 ## Ready to Generate!
 
-Provide Phase 1 and Phase 2 outputs, and I'll create realistic ideal_trajectory.json and failed_trajectory.json files.
+Provide Phase 1 and Phase 2 outputs, and I'll create realistic **BOTH** trajectory files:
+- ✅ `ideal_trajectory.json` 
+- ✅ `failed_trajectory.json`
+
+**Both files are MANDATORY for Phase 3 completion.**
 

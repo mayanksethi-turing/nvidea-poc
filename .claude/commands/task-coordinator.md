@@ -568,23 +568,63 @@ For each hunk in fix.patch, create a `find_and_replace_code` action:
 }
 ```
 
-### Step 3.5: Phase 3 Complete ✅
+### Step 3.5: Create failed_trajectory.json (10 min) 🚨 MANDATORY
+
+**⚠️ REQUIRED: Both trajectories must be generated!**
+
+Create failed trajectory by modifying ideal trajectory:
+
+```bash
+# Copy ideal as base
+cp ideal_trajectory.json failed_trajectory.json
+
+# Modify to show common failure pattern:
+# - Remove test execution actions
+# - Shorten exploration phase
+# - Modify thoughts to show hasty reasoning
+# - Add "failureMode" to tags
+```
+
+**Common failure modes:**
+- `"Incomplete Solution / Inadequate Verification"` (most common - skip tests)
+- `"Partial Fix / Missing Edge Cases"`
+- `"Wrong Root Cause / Incorrect Fix"`
+- `"Multi-file Change / Missed Files"`
+
+**Validation:**
+```bash
+# Verify both files exist
+[ -f ideal_trajectory.json ] || { echo "❌ Missing ideal_trajectory.json"; exit 1; }
+[ -f failed_trajectory.json ] || { echo "❌ Missing failed_trajectory.json"; exit 1; }
+
+# Verify both are valid JSON
+jq . ideal_trajectory.json > /dev/null || { echo "❌ Invalid ideal_trajectory.json"; exit 1; }
+jq . failed_trajectory.json > /dev/null || { echo "❌ Invalid failed_trajectory.json"; exit 1; }
+
+# Verify failed has failureMode in tags
+jq -e '.tags.failureMode' failed_trajectory.json > /dev/null || { echo "❌ Missing failureMode in failed_trajectory.json"; exit 1; }
+
+echo "✅ Both trajectory files generated and validated"
+```
+
+### Step 3.7: Phase 3 Complete ✅
 
 **Report:**
 ```
-✅ Phase 3: Trajectory Generation - COMPLETE (25 min)
+✅ Phase 3: Trajectory Generation - COMPLETE (35 min)
 
 Results:
-  - ideal_trajectory.json: {count} actions
-  - failed_trajectory.json: {count} actions (REQUIRED)
+  - ideal_trajectory.json: {count} actions ✅
+  - failed_trajectory.json: {count} actions ✅ (MANDATORY)
   - Exploration: {count} actions
   - Solution: {count} actions
   - Test: {count} actions
   - Total duration: {seconds} sec (~{minutes} min)
+  - Failure mode: {failureMode}
 
-REQUIRED Outputs:
+REQUIRED Outputs (BOTH MANDATORY):
   ✅ ideal_trajectory.json - Correct solution path
-  ✅ failed_trajectory.json - Common failure pattern
+  ✅ failed_trajectory.json - Common failure pattern with failureMode tag
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PROGRESS: [██████░░░░] 60% Complete
@@ -808,11 +848,12 @@ mkdir -p "$SAMPLE_DIR"
 ```bash
 # SAMPLE_DIR is set from previous step
 
-# Copy all generated files
+# Copy all generated files (INCLUDING BOTH TRAJECTORIES)
 cp "${WORK_DIR}/metadata.json" "$SAMPLE_DIR/"
 cp "${WORK_DIR}/repo/fix.patch" "$SAMPLE_DIR/"
 cp "${WORK_DIR}/repo/tests.patch" "$SAMPLE_DIR/"
 cp "${WORK_DIR}/ideal_trajectory.json" "$SAMPLE_DIR/"
+cp "${WORK_DIR}/failed_trajectory.json" "$SAMPLE_DIR/"  # 🚨 MANDATORY
 cp "${WORK_DIR}/Dockerfile" "$SAMPLE_DIR/"
 cp "${WORK_DIR}/run.sh" "$SAMPLE_DIR/"
 
@@ -825,22 +866,35 @@ chmod +x "$SAMPLE_DIR/run.sh"
 ```bash
 cd $SAMPLE_DIR
 
-# Check all required files exist
-for file in metadata.json fix.patch tests.patch ideal_trajectory.json Dockerfile run.sh; do
+# Check all required files exist (INCLUDING BOTH TRAJECTORIES)
+for file in metadata.json fix.patch tests.patch ideal_trajectory.json failed_trajectory.json Dockerfile run.sh; do
   if [ ! -f "$file" ]; then
-    echo "❌ Missing: $file"
+    echo "❌ Missing REQUIRED file: $file"
     exit 1
   fi
 done
 echo "✅ All required files present"
 
 # Validate JSON files
-jq . metadata.json > /dev/null && echo "✅ metadata.json valid"
-jq . ideal_trajectory.json > /dev/null && echo "✅ trajectory valid"
+jq . metadata.json > /dev/null && echo "✅ metadata.json valid" || { echo "❌ Invalid metadata.json"; exit 1; }
+jq . ideal_trajectory.json > /dev/null && echo "✅ ideal_trajectory.json valid" || { echo "❌ Invalid ideal_trajectory.json"; exit 1; }
+jq . failed_trajectory.json > /dev/null && echo "✅ failed_trajectory.json valid" || { echo "❌ Invalid failed_trajectory.json"; exit 1; }
+
+# Validate metadata has required fields (task-1 format)
+jq -e '.author, .repo, .head, .prNumber, .failure' metadata.json > /dev/null && echo "✅ metadata.json has required fields" || {
+  echo "⚠️  Warning: metadata.json missing some standard fields (author, repo, head, prNumber, failure)"
+  echo "   Acceptable if using alternative format, but task-1 format is preferred"
+}
+
+# Validate failed trajectory has failureMode
+jq -e '.tags.failureMode' failed_trajectory.json > /dev/null && echo "✅ failed_trajectory.json has failureMode" || {
+  echo "❌ failed_trajectory.json missing tags.failureMode"
+  exit 1
+}
 
 # Validate patches
-head -1 fix.patch | grep -q "^diff --git" && echo "✅ fix.patch valid"
-head -1 tests.patch | grep -q "^diff --git" && echo "✅ tests.patch valid"
+head -1 fix.patch | grep -q "^diff --git" && echo "✅ fix.patch valid" || { echo "❌ Invalid fix.patch"; exit 1; }
+head -1 tests.patch | grep -q "^diff --git" && echo "✅ tests.patch valid" || { echo "❌ Invalid tests.patch"; exit 1; }
 ```
 
 ### Step 5.5: Run Validation Cycle (20 min)
@@ -876,7 +930,14 @@ Results:
 File Checklist:
   ✅ metadata.json (with detailed failure mode & tokens)
   ✅ fix.patch
-  ✅ tests.patch  
+  ✅ tests.patch
+  ✅ ideal_trajectory.json (complete solution) 
+  ✅ failed_trajectory.json (failure pattern with failureMode) 🚨 MANDATORY
+  ✅ Dockerfile
+  ✅ run.sh
+  ✅ PASS_pre_tests.log
+  ✅ FAIL_pre_patch.log
+  ✅ PASS_post_patch.log  
   ✅ ideal_trajectory.json
   ✅ failed_trajectory.json (REQUIRED)
   ✅ Dockerfile
