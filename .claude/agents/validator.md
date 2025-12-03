@@ -230,6 +230,78 @@ tail -20 PASS_post_patch.log
 
 ---
 
+### Task 5.6.5: Verify Code Coverage Reports (REQUIRED) (5 min)
+
+**CRITICAL: All PASS logs must include code coverage reports**
+
+```bash
+echo "======================================"
+echo "Validating Coverage Reports"
+echo "======================================"
+
+# Check PASS_pre_tests.log for coverage
+if grep -qi "coverage\|% Cov\|% Stmts\|% Branch\|Statements\|Functions\|Lines" PASS_pre_tests.log; then
+    echo "✅ Coverage report found in PASS_pre_tests.log"
+else
+    echo "❌ ERROR: No coverage report in PASS_pre_tests.log"
+    echo "   The test command must include coverage flags!"
+    exit 1
+fi
+
+# Check PASS_post_patch.log for coverage
+if grep -qi "coverage\|% Cov\|% Stmts\|% Branch\|Statements\|Functions\|Lines" PASS_post_patch.log; then
+    echo "✅ Coverage report found in PASS_post_patch.log"
+else
+    echo "❌ ERROR: No coverage report in PASS_post_patch.log"
+    echo "   The test command must include coverage flags!"
+    exit 1
+fi
+
+# Display coverage summary from logs
+echo ""
+echo "=== Coverage from PASS_pre_tests.log ==="
+grep -i "coverage\|% Stmts\|Statements" PASS_pre_tests.log | head -10
+
+echo ""
+echo "=== Coverage from PASS_post_patch.log ==="
+grep -i "coverage\|% Stmts\|Statements" PASS_post_patch.log | head -10
+
+echo ""
+echo "✅ All coverage reports validated"
+```
+
+**Coverage validation checklist:**
+- [ ] PASS_pre_tests.log contains "Coverage" or percentage metrics
+- [ ] PASS_post_patch.log contains "Coverage" or percentage metrics
+- [ ] Reports show statement/branch/function/line coverage
+- [ ] Reports are human-readable text (not just XML)
+- [ ] Coverage percentages are visible
+
+**Language-specific patterns to look for:**
+
+**JavaScript/TypeScript (Jest/Vitest):**
+- Look for: "Coverage report", "% Stmts", "% Branch", "% Funcs", "% Lines"
+- Example: `Statements   : 88.8%`
+
+**Python (pytest):**
+- Look for: "coverage:", "Stmts", "Miss", "Cover"
+- Example: `pretix/api/models.py    88    5    94%`
+
+**Go:**
+- Look for: "coverage:", "ok", "%"
+- Example: `ok  	github.com/repo/pkg	0.123s	coverage: 85.5% of statements`
+
+**Java (JaCoCo):**
+- Look for: "JaCoCo", "Instructions", "Branches", "Lines"
+
+**If coverage is missing:**
+1. Check run.sh uses correct test command with coverage flags
+2. Verify language-specific coverage tool is installed in Dockerfile
+3. Ensure coverage reports to terminal/text (not just files)
+4. Refer to `.claude/coverage-reference.md` for correct commands
+
+---
+
 ### Task 5.7: Quality Checks (10 min)
 
 **Check 1: Patch Quality**

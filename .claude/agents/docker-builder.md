@@ -539,7 +539,247 @@ ENV SPRING_PROFILES_ACTIVE=test
 
 ---
 
+### Task 4.8: Configure Code Coverage (REQUIRED) (5 min)
+
+**All test execution must include code coverage reports in logs.**
+
+#### Coverage Requirements by Language:
+
+##### **JavaScript/TypeScript (Jest/Vitest)**
+
+```bash
+# In run.sh - PRE_TESTS phase with coverage
+docker exec $CONTAINER_ID yarn vitest run --coverage --silent --reporter=dot --coverage.reporter=text-summary --retry=1 > PASS_pre_tests.log 2>&1
+
+# POST_PATCH phase with detailed coverage
+docker exec $CONTAINER_ID yarn vitest run --coverage --silent --reporter=dot --coverage.reporter=text --retry=1 > PASS_post_patch.log 2>&1
+```
+
+**Vitest Configuration:**
+- Use `--coverage` flag
+- Use `--coverage.reporter=text-summary` for summary
+- Use `--coverage.reporter=text` for detailed file-by-file coverage
+- Coverage will appear at the end of test output
+
+**Jest Configuration:**
+```bash
+# Add to test command
+jest --coverage --coverageReporters=text --coverageReporters=text-summary
+```
+
+---
+
+##### **Python (pytest)**
+
+```bash
+# In run.sh - with coverage
+docker exec $CONTAINER_ID pytest --cov=./ --cov-report=term tests/ > PASS_pre_tests.log 2>&1
+```
+
+**Pytest Configuration:**
+- Use `--cov=./` to cover entire codebase
+- Use `--cov-report=term` for terminal output
+- Optionally add `--cov-report=xml` for machine-readable format
+
+**Multi-process tests:**
+```bash
+pytest -n 3 --cov=./ --cov-report=xml --cov-report=term tests/
+```
+
+---
+
+##### **Go (go test)**
+
+```bash
+# In run.sh - with coverage
+docker exec $CONTAINER_ID go test -v -cover ./... > PASS_pre_tests.log 2>&1
+
+# For detailed coverage report:
+docker exec $CONTAINER_ID bash -c "go test -v -cover -coverprofile=coverage.out ./... && go tool cover -func=coverage.out" > PASS_post_patch.log 2>&1
+```
+
+**Go Configuration:**
+- Use `-cover` flag for inline coverage percentages
+- Use `-coverprofile=coverage.out` for detailed report
+- Use `go tool cover -func=coverage.out` to display coverage summary
+- Optionally use `go tool cover -html=coverage.out` for HTML report
+
+---
+
+##### **Java (Maven)**
+
+```bash
+# In run.sh - with coverage
+docker exec $CONTAINER_ID mvn test jacoco:report > PASS_pre_tests.log 2>&1
+docker exec $CONTAINER_ID cat target/site/jacoco/index.html | grep -A10 "Total" >> PASS_pre_tests.log 2>&1
+```
+
+**Maven JaCoCo Configuration:**
+Ensure pom.xml includes:
+```xml
+<plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>0.8.10</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>prepare-agent</goal>
+            </goals>
+        </execution>
+        <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+                <goal>report</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+---
+
+##### **Java (Gradle)**
+
+```bash
+# In run.sh - with coverage
+docker exec $CONTAINER_ID gradle test jacocoTestReport > PASS_pre_tests.log 2>&1
+docker exec $CONTAINER_ID cat build/reports/jacoco/test/html/index.html | grep -A10 "Total" >> PASS_pre_tests.log 2>&1
+```
+
+**Gradle JaCoCo Configuration (build.gradle):**
+```groovy
+plugins {
+    id 'jacoco'
+}
+
+jacoco {
+    toolVersion = "0.8.10"
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+test {
+    finalizedBy jacocoTestReport
+}
+```
+
+---
+
+#### Updated run.sh Template with Coverage:
+
+```bash
+#!/bin/bash
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TASK_NAME=$(basename "$SCRIPT_DIR")
+IMAGE_NAME="nvidea-poc-${TASK_NAME}"
+
+echo "======================================"
+echo "Building Docker Image: ${IMAGE_NAME}"
+echo "======================================"
+docker build -t "$IMAGE_NAME" .
+
+CONTAINER_ID=$(docker create "$IMAGE_NAME")
+
+cleanup() {
+    docker rm -f $CONTAINER_ID 2>/dev/null || true
+}
+trap cleanup EXIT
+
+echo ""
+echo "======================================"
+echo "Phase 1: Running Pre-Tests WITH COVERAGE (Should PASS)"
+echo "======================================"
+docker start $CONTAINER_ID
+
+# Language-specific test command with coverage
+# Choose appropriate command from above based on language
+docker exec $CONTAINER_ID {TEST_COMMAND_WITH_COVERAGE} 2>&1 | tee PASS_pre_tests.log
+
+docker stop $CONTAINER_ID
+
+echo ""
+echo "======================================"
+echo "Phase 2: Applying tests.patch"
+echo "======================================"
+docker cp tests.patch $CONTAINER_ID:/tmp/tests.patch
+docker start $CONTAINER_ID
+docker exec $CONTAINER_ID bash -c "git apply /tmp/tests.patch"
+docker stop $CONTAINER_ID
+
+echo ""
+echo "======================================"
+echo "Phase 3: Running Tests After tests.patch (Should FAIL)"
+echo "======================================"
+docker start $CONTAINER_ID
+docker exec $CONTAINER_ID {TEST_COMMAND_NO_COVERAGE} 2>&1 | tee FAIL_pre_patch.log
+docker stop $CONTAINER_ID
+
+echo ""
+echo "======================================"
+echo "Phase 4: Applying fix.patch"
+echo "======================================"
+docker cp fix.patch $CONTAINER_ID:/tmp/fix.patch
+docker start $CONTAINER_ID
+docker exec $CONTAINER_ID bash -c "git apply /tmp/fix.patch"
+docker stop $CONTAINER_ID
+
+echo ""
+echo "======================================"
+echo "Phase 5: Running Tests After fix.patch WITH COVERAGE (Should PASS)"
+echo "======================================"
+docker start $CONTAINER_ID
+docker exec $CONTAINER_ID {TEST_COMMAND_WITH_COVERAGE} 2>&1 | tee PASS_post_patch.log
+docker stop $CONTAINER_ID
+
+echo ""
+echo "======================================"
+echo "Validation Complete - Checking Coverage Reports"
+echo "======================================"
+
+# Verify coverage reports exist in logs
+if grep -q -i "coverage\|%\|stmts\|branch" PASS_pre_tests.log; then
+    echo "✅ Coverage report found in PASS_pre_tests.log"
+else
+    echo "⚠️  WARNING: No coverage report detected in PASS_pre_tests.log"
+fi
+
+if grep -q -i "coverage\|%\|stmts\|branch" PASS_post_patch.log; then
+    echo "✅ Coverage report found in PASS_post_patch.log"
+else
+    echo "⚠️  WARNING: No coverage report detected in PASS_post_patch.log"
+fi
+
+echo ""
+echo "Check logs:"
+echo "  - PASS_pre_tests.log (with coverage)"
+echo "  - FAIL_pre_patch.log"
+echo "  - PASS_post_patch.log (with coverage)"
+```
+
+---
+
+#### Validation Checklist:
+
+When generating run.sh, ensure:
+- [ ] **PASS_pre_tests.log** will contain coverage report
+- [ ] **PASS_post_patch.log** will contain coverage report
+- [ ] Coverage shows percentage metrics (statements, branches, functions, lines)
+- [ ] Coverage report is readable (not binary/XML only)
+- [ ] Test commands use correct coverage flags for the language
+- [ ] FAIL_pre_patch.log does NOT need coverage (to keep logs cleaner)
+
+---
+
 ## Ready to Build!
 
-Provide Phase 1 output and I'll generate a complete Dockerfile and run.sh validation script.
+Provide Phase 1 output and I'll generate a complete Dockerfile and run.sh validation script with proper coverage configuration.
 

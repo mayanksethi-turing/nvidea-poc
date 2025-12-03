@@ -71,9 +71,9 @@ samples/task-N/
 ├── ideal_trajectory.json   # Solution steps
 ├── Dockerfile              # Validation environment
 ├── run.sh                  # Validation script
-├── PASS_pre_tests.log      # Initial test run
+├── PASS_pre_tests.log      # Initial test run ⭐ WITH COVERAGE REPORT
 ├── FAIL_pre_patch.log      # After tests.patch (should fail)
-└── PASS_post_patch.log     # After fix.patch (should pass)
+└── PASS_post_patch.log     # After fix.patch (should pass) ⭐ WITH COVERAGE REPORT
 ```
 
 ---
@@ -149,11 +149,18 @@ Every sample must pass this cycle:
 ```
 
 **Expected results:**
-1. **Pre-tests:** ✅ PASS (original code works)
+1. **Pre-tests:** ✅ PASS (original code works) **+ Coverage Report**
 2. **After tests.patch:** ❌ FAIL (new test exposes bug)
-3. **After fix.patch:** ✅ PASS (fix resolves bug)
+3. **After fix.patch:** ✅ PASS (fix resolves bug) **+ Coverage Report**
 
 This proves the sample correctly captures a fail→pass scenario.
+
+**Code Coverage Requirements:**
+- ✅ PASS_pre_tests.log **must** include code coverage report
+- ✅ PASS_post_patch.log **must** include code coverage report
+- ✅ Coverage should show: Statements, Branches, Functions, Lines percentages
+- ✅ Reports must be human-readable text in the log files
+- 📚 Refer to `.claude/coverage-reference.md` for language-specific commands
 
 ---
 

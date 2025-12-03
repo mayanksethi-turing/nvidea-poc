@@ -27,7 +27,7 @@ echo "==================================="
 echo "Running unit tests PRE-TESTS..."
 echo "Running baseline tests (should pass)"
 echo "==================================="
-docker exec $CONTAINER_NAME go test -v ./... 2>&1 | tee PASS_pre_tests.log
+docker exec $CONTAINER_NAME go test -v -cover ./... 2>&1 | tee PASS_pre_tests.log
 
 echo ""
 echo "==================================="
@@ -59,7 +59,7 @@ echo "==================================="
 echo "Running unit tests POST-PATCH..."
 echo "Tests should PASS (implementation applied)"
 echo "==================================="
-docker exec $CONTAINER_NAME go test -v ./... 2>&1 | tee PASS_post_patch.log
+docker exec $CONTAINER_NAME bash -c "go test -v -cover -coverprofile=coverage.out ./... && go tool cover -func=coverage.out" 2>&1 | tee PASS_post_patch.log
 
 echo ""
 echo "==================================="
