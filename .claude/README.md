@@ -68,7 +68,8 @@ samples/task-N/
 ├── metadata.json           # Repo info, PR, commit
 ├── fix.patch               # Bug fix code only
 ├── tests.patch             # Test changes only  
-├── ideal_trajectory.json   # Solution steps
+├── ideal_trajectory.json   # Solution steps (how to solve correctly)
+├── failed_trajectory.json  # Failure pattern (common mistakes) ⚠️ REQUIRED
 ├── Dockerfile              # Validation environment
 ├── run.sh                  # Validation script
 ├── PASS_pre_tests.log      # Initial test run ⭐ WITH COVERAGE REPORT

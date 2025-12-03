@@ -1,0 +1,218 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Trajectory Schema",
+  "description": "Schema for AI agent trajectory files showing problem-solving steps",
+  "type": "object",
+  "required": ["annotationTrace", "taskIssue", "tags"],
+  "properties": {
+    "annotationTrace": {
+      "type": "array",
+      "description": "Chronological sequence of agent actions",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["action", "details", "thought", "timestamp", "elapsed_seconds", "duration_seconds", "partition"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "begin_interaction",
+              "search_string",
+              "search_dir",
+              "open_file",
+              "find_and_replace_code",
+              "execute_terminal_command",
+              "add_thought",
+              "end_interaction"
+            ],
+            "description": "Type of action the agent performed"
+          },
+          "details": {
+            "type": "object",
+            "description": "Action-specific details (structure varies by action type)",
+            "properties": {
+              "commandType": {
+                "type": "string",
+                "description": "Optional command type classification"
+              },
+              "context": {
+                "type": "string",
+                "description": "Context or target of the action"
+              },
+              "payload": {
+                "description": "Action-specific data payload"
+              },
+              "path": {
+                "type": "string",
+                "description": "File or directory path"
+              },
+              "searchKey": {
+                "type": "string",
+                "description": "Search query string"
+              },
+              "results": {
+                "type": "array",
+                "description": "Search results with file paths and line numbers",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "file": {
+                "type": "string",
+                "description": "File path for file operations"
+              },
+              "changes": {
+                "type": "array",
+                "description": "Code changes for edit operations",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "originalText": {
+                      "type": "object",
+                      "properties": {
+                        "startLine": {"type": "integer"},
+                        "endLine": {"type": "integer"},
+                        "context": {"type": "string"}
+                      }
+                    },
+                    "newText": {
+                      "type": "object",
+                      "properties": {
+                        "startLine": {"type": "integer"},
+                        "endLine": {"type": "integer"},
+                        "context": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              },
+              "command": {
+                "type": "string",
+                "description": "Terminal command executed"
+              },
+              "directory": {
+                "type": "string",
+                "description": "Working directory for command"
+              },
+              "output": {
+                "type": "string",
+                "description": "Command output or result"
+              },
+              "exitCode": {
+                "type": "integer",
+                "description": "Command exit code"
+              }
+            }
+          },
+          "thought": {
+            "type": "string",
+            "description": "Agent's reasoning or explanation for this action",
+            "minLength": 10
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when action occurred",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$"
+          },
+          "elapsed_seconds": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Seconds elapsed since session start"
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Duration of this action in seconds"
+          },
+          "partition": {
+            "type": "string",
+            "enum": [
+              "EnvironmentSetup",
+              "Exploration",
+              "Solution",
+              "Test",
+              "FailtoPassUnitTest",
+              "Completion"
+            ],
+            "description": "Phase/partition of the debugging process"
+          }
+        }
+      }
+    },
+    "taskIssue": {
+      "type": "string",
+      "description": "Clear description of the bug or issue being addressed",
+      "minLength": 20
+    },
+    "tags": {
+      "type": "object",
+      "required": ["difficulty", "issueType", "techTags"],
+      "properties": {
+        "difficulty": {
+          "type": "string",
+          "enum": ["easy", "medium", "hard"],
+          "description": "Complexity level of the task"
+        },
+        "issueType": {
+          "type": "string",
+          "enum": ["BugFix", "Feature", "Refactor"],
+          "description": "Type of code change"
+        },
+        "techTags": {
+          "type": "array",
+          "description": "Technologies involved (languages, frameworks, tools)",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "failureMode": {
+          "type": "string",
+          "description": "REQUIRED for failed trajectories: specific failure classification",
+          "enum": [
+            "Incomplete Solution / Inadequate Verification",
+            "Incomplete Solution / Partial Fix",
+            "Incomplete Solution / Missing Edge Cases",
+            "Multi-file Change / Missed Files",
+            "Wrong Root Cause / Incorrect Fix",
+            "Surface Fix / Root Cause Not Addressed",
+            "Hasty Implementation / No Code Review",
+            "Logic Error / Null Pointer Exception",
+            "Logic Error / Infinite Loop",
+            "Logic Error / Infinite Redirect Loop",
+            "Logic Error / Off-by-One Error",
+            "Logic Error / Race Condition",
+            "Logic Error / Incorrect Conditional",
+            "Schema Data Type Error / Type Mismatch",
+            "Type Error / Missing Type Conversion",
+            "Type Error / Incorrect Interface Implementation",
+            "Integration Error / Missing Context Propagation",
+            "Integration Error / Dependency Injection Failure",
+            "Integration Error / API Contract Violation",
+            "Integration Error / Tight Component Coupling",
+            "CSS Inconsistency / Cross-Browser Compatibility Issue",
+            "UI Error / State Management Bug",
+            "UI Error / Component Lifecycle Issue",
+            "UI Error / Missing Event Handler",
+            "Config Error / Environment Variable Missing",
+            "Config Error / Incorrect Default Values"
+          ]
+        }
+      }
+    },
+    "patch": {
+      "type": "string",
+      "description": "Optional: The actual patch generated in this session"
+    },
+    "fullPatch": {
+      "type": "string",
+      "description": "Optional: Complete patch including tests"
+    },
+    "dockerfile": {
+      "type": "string",
+      "description": "Optional: Dockerfile generated in this session"
+    }
+  }
+}
+

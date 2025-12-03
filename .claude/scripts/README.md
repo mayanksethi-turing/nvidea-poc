@@ -357,3 +357,141 @@ If you see conflicts, ensure you're running the updated `run.sh` from the script
 - Validation: `.claude/agents/validator.md`
 - Main README: `.claude/README.md`
 
+---
+
+## 🆕 New Quality Assurance Scripts
+
+### `validate-trajectory.sh` ⭐
+
+**Purpose:** Validate trajectory files for authenticity and quality.
+
+**Usage:**
+```bash
+./.claude/scripts/validate-trajectory.sh samples/task-1/ideal_trajectory.json --type ideal
+./.claude/scripts/validate-trajectory.sh samples/task-1/failed_trajectory.json --type failed
+```
+
+**What it checks:**
+- JSON syntax and schema compliance
+- Action count (warns if < 15 for real trajectories)
+- Timestamp authenticity (millisecond precision check)
+- Round elapsed times detection (synthetic indicator)
+- Details richness (search results, command outputs)
+- Thought quality (specific vs generic)
+- Required actions (begin/end_interaction, test execution)
+- Partition distribution
+- failureMode field for failed trajectories
+
+**Exit codes:**
+- `0`: Passed (may have warnings for improvement)
+- `1`: Failed validation (must fix errors)
+
+---
+
+### `count-tokens.sh` ⭐
+
+**Purpose:** Estimate input/output tokens for trajectory files to populate metadata.json.
+
+**Usage:**
+```bash
+./.claude/scripts/count-tokens.sh samples/task-1/ideal_trajectory.json
+```
+
+**What it calculates:**
+- **Input tokens:** Problem statement + exploration thoughts + file reads + search results
+- **Output tokens:** Solution thoughts + code changes + test outputs + completion summary
+- **Complexity assessment:** Simple/medium/complex classification
+- **Action statistics:** Counts by type (searches, edits, commands, etc.)
+- **Duration analysis:** Total elapsed time
+
+**Output provides ready-to-use values:**
+```
+For metadata.json, use:
+  "inputTokens": 13600,
+  "outputTokens": 1900
+```
+
+---
+
+### `validate-sample.sh` (Enhanced)
+
+**New feature:** Added `--dry-run` mode for fast validation without Docker operations.
+
+**Usage:**
+```bash
+# Full validation (includes Docker build/test)
+./.claude/scripts/validate-sample.sh samples/task-1
+
+# Dry-run mode (skips Docker, faster)
+./.claude/scripts/validate-sample.sh samples/task-1 --dry-run
+```
+
+**Dry-run mode validates:**
+- File presence and structure
+- JSON syntax
+- Patch format
+- Metadata completeness
+- Trajectory authenticity (calls validate-trajectory.sh)
+- *(Skips Docker build and test execution)*
+
+---
+
+## 🔄 Complete Quality Workflow
+
+### When Creating a New Sample:
+
+1. **Author trajectories** (see `.claude/docs/TRAJECTORY_AUTHORING_GUIDE.md`)
+
+2. **Validate trajectories:**
+   ```bash
+   ./.claude/scripts/validate-trajectory.sh ideal_trajectory.json --type ideal
+   ./.claude/scripts/validate-trajectory.sh failed_trajectory.json --type failed
+   ```
+
+3. **Estimate tokens:**
+   ```bash
+   ./.claude/scripts/count-tokens.sh ideal_trajectory.json
+   # Copy the output values to metadata.json
+   ```
+
+4. **Quick validation:**
+   ```bash
+   ./.claude/scripts/validate-sample.sh samples/task-N --dry-run
+   ```
+
+5. **Full validation:**
+   ```bash
+   ./.claude/scripts/validate-sample.sh samples/task-N
+   ```
+
+### Batch Validation:
+
+```bash
+# Validate all ideal trajectories
+for traj in samples/task-*/ideal_trajectory.json; do
+    echo "Validating $traj"
+    ./.claude/scripts/validate-trajectory.sh "$traj" --type ideal
+done
+
+# Validate all failed trajectories  
+for traj in samples/task-*/failed_trajectory.json; do
+    echo "Validating $traj"
+    ./.claude/scripts/validate-trajectory.sh "$traj" --type failed
+done
+
+# Quick validation of all samples
+for task in samples/task-*/; do
+    echo "Validating $task"
+    ./.claude/scripts/validate-sample.sh "$task" --dry-run
+done
+```
+
+---
+
+## 📖 Additional Documentation
+
+- **Trajectory Authoring Guide:** `.claude/docs/TRAJECTORY_AUTHORING_GUIDE.md`
+- **Trajectory Schema:** `.claude/schemas/trajectory-schema.json`
+- **Metadata Schema:** `.claude/schemas/metadata-schema.md`
+- **Improvements Summary:** `.claude/docs/WORKFLOW_IMPROVEMENTS.md`
+

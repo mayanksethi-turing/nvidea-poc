@@ -121,15 +121,16 @@ You will create:
 
 ```
 samples/task-{N}/
-├── metadata.json          # Repo info, PR, commit hash
-├── fix.patch              # Bug fix code (solution only)
-├── tests.patch            # Test code (tests only)
-├── ideal_trajectory.json  # Step-by-step solution
-├── Dockerfile             # Validation environment
-├── run.sh                 # Validation script (executable)
-├── PASS_pre_tests.log     # Initial tests (should pass)
-├── FAIL_pre_patch.log     # After tests.patch (should fail)
-└── PASS_post_patch.log    # After fix.patch (should pass)
+├── metadata.json           # Repo info, PR, commit hash
+├── fix.patch               # Bug fix code (solution only)
+├── tests.patch             # Test code (tests only)
+├── ideal_trajectory.json   # Step-by-step solution (how to solve correctly)
+├── failed_trajectory.json  # Failure pattern (common mistakes) ⚠️ REQUIRED
+├── Dockerfile              # Validation environment
+├── run.sh                  # Validation script (executable)
+├── PASS_pre_tests.log      # Initial tests (should pass) WITH COVERAGE
+├── FAIL_pre_patch.log      # After tests.patch (should fail)
+└── PASS_post_patch.log     # After fix.patch (should pass) WITH COVERAGE
 ```
 
 ---

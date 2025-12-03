@@ -701,8 +701,10 @@ export AGENT_CONTEXT_LIMIT=50000
 ## Ready to Generate!
 
 Provide Phase 1 and Phase 2 outputs, and I'll create realistic **BOTH** trajectory files:
-- ✅ `ideal_trajectory.json` 
-- ✅ `failed_trajectory.json`
+- ✅ `ideal_trajectory.json` - How to solve correctly (REQUIRED)
+- ✅ `failed_trajectory.json` - Common failure pattern (REQUIRED)
 
 **Both files are MANDATORY for Phase 3 completion.**
+
+**See `.claude/docs/TRAJECTORY_AUTHORING_GUIDE.md` for detailed instructions on creating authentic trajectories.**
 

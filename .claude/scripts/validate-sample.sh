@@ -1,11 +1,21 @@
 #!/bin/bash
 # Validate a task sample for completeness and correctness
-# Usage: ./validate-sample.sh <task-directory>
+# Usage: ./validate-sample.sh <task-directory> [--dry-run]
 # Example: ./validate-sample.sh samples/task-1
+# Example: ./validate-sample.sh samples/task-1 --dry-run
 
 set -e
 
 TASK_DIR="${1:-.}"
+DRY_RUN=false
+
+# Check for --dry-run flag
+if [ "$2" = "--dry-run" ] || [ "$1" = "--dry-run" ]; then
+    DRY_RUN=true
+    if [ "$1" = "--dry-run" ]; then
+        TASK_DIR="${2:-.}"
+    fi
+fi
 
 if [ ! -d "$TASK_DIR" ]; then
     echo "❌ Error: Directory $TASK_DIR does not exist"
@@ -16,7 +26,11 @@ cd "$TASK_DIR"
 TASK_NAME=$(basename "$TASK_DIR")
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🔍 Validating $TASK_NAME"
+if [ "$DRY_RUN" = true ]; then
+    echo "🔍 Validating $TASK_NAME (DRY RUN MODE - No Docker operations)"
+else
+    echo "🔍 Validating $TASK_NAME"
+fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo
 
