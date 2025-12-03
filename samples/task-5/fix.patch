@@ -1,0 +1,20 @@
+diff --git a/database/docker-entrypoint-initdb.d/init-db.sql b/database/docker-entrypoint-initdb.d/init-db.sql
+index a1b2c3d4..e5f6g7h8 100644
+--- a/database/docker-entrypoint-initdb.d/init-db.sql
++++ b/database/docker-entrypoint-initdb.d/init-db.sql
+@@ -5,7 +5,7 @@ CREATE TABLE product
+ (
+   productid serial UNIQUE PRIMARY KEY,
+   description character varying(10485760) NOT NULL,
+-  image oid,
++  image character varying(255) NOT NULL,
+   name character varying(255) NOT NULL,
+   price double precision NOT NULL
+ );
+@@ -25,7 +25,7 @@ INSERT INTO product (name, description, image, price) VALUES ('Docker Babies',
+ INSERT INTO product (name, description, image, price) VALUES ('Experimental', 'Trying the latest', '/images/7.png', 25);
+ INSERT INTO product (name, description, image, price) VALUES ('Docker for Developers', 'Escape the App Dependency Matrix', '/images/8.png', 25);
+-INSERT INTO product (name, description, image, price) VALUES ('DockerCon Copenhagen', 'DockerCon returns to Europe', '/images/9.jpg', 25);
++INSERT INTO product (name, description, image, price) VALUES ('DockerCon Copenhagen', 'DockerCon returns to Europe', '/images/9.png', 25);
+ 
+ 
