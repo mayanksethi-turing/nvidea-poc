@@ -1,0 +1,9 @@
+{
+  "author": "mayanksethi-turing",
+  "repo": "https://github.com/meilisearch/mini-dashboard.git",
+  "head": "1890e29f9e99578aeb93da27f065c5fb6fbbd8e2",
+  "prNumber": "636",
+  "failure": "Runtime Error / Null Pointer Exception",
+  "inputTokens": 2500,
+  "outputTokens": 350
+}
