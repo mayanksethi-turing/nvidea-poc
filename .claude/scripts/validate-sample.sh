@@ -114,7 +114,7 @@ echo
 # ============================================
 # 4. Validate Trajectory Files
 # ============================================
-echo "🔄 Validating trajectory structure..."
+echo "🔄 Validating trajectory structure and authenticity..."
 
 # Check ideal_trajectory.json
 if [ -f "ideal_trajectory.json" ]; then
@@ -123,6 +123,13 @@ if [ -f "ideal_trajectory.json" ]; then
     
     if [ "$IDEAL_ACTIONS" -gt 0 ]; then
         echo "  ✅ ideal_trajectory.json: $IDEAL_ACTIONS actions"
+        
+        # 🚨 NEW: Check if trajectory appears real or synthetic
+        if [ "$IDEAL_ACTIONS" -lt 15 ]; then
+            echo "  ⚠️  Only $IDEAL_ACTIONS actions (real trajectories typically have 15+)"
+            echo "     This may indicate a synthetic/manually-written trajectory"
+            WARNINGS=$((WARNINGS + 1))
+        fi
     else
         echo "  ❌ ideal_trajectory.json: No actions found"
         ERRORS=$((ERRORS + 1))
@@ -133,6 +140,40 @@ if [ -f "ideal_trajectory.json" ]; then
     else
         echo "  ❌ ideal_trajectory.json: taskIssue missing"
         ERRORS=$((ERRORS + 1))
+    fi
+    
+    # 🚨 NEW: Check timestamp precision (real captures have milliseconds)
+    FIRST_TS=$(jq -r '.annotationTrace[0].timestamp // "missing"' ideal_trajectory.json 2>/dev/null)
+    if [ "$FIRST_TS" != "missing" ]; then
+        if [[ "$FIRST_TS" =~ \.[0-9]{3}Z$ ]]; then
+            echo "  ✅ ideal_trajectory.json: Real timestamps with millisecond precision"
+        else
+            echo "  ⚠️  ideal_trajectory.json: Timestamps lack millisecond precision"
+            echo "     Real: 2025-12-01T18:27:05.146Z, Found: $FIRST_TS"
+            echo "     This indicates synthetic/manually-created timestamps"
+            WARNINGS=$((WARNINGS + 1))
+        fi
+    fi
+    
+    # 🚨 NEW: Check for round elapsed times (sign of synthetic data)
+    ROUND_TIMES=$(jq '[.annotationTrace[].elapsed_seconds] | map(. % 30 == 0) | map(select(. == true)) | length' ideal_trajectory.json 2>/dev/null || echo "0")
+    TOTAL_TIMES=$(jq '[.annotationTrace[].elapsed_seconds] | length' ideal_trajectory.json 2>/dev/null || echo "1")
+    if [ $ROUND_TIMES -gt 0 ] && [ $TOTAL_TIMES -gt 0 ]; then
+        ROUND_RATIO=$(echo "scale=2; $ROUND_TIMES * 100 / $TOTAL_TIMES" | bc)
+        if (( $(echo "$ROUND_RATIO > 50" | bc -l) )); then
+            echo "  ⚠️  ideal_trajectory.json: ${ROUND_RATIO}% of elapsed times are round numbers (30s, 60s, 90s)"
+            echo "     Real agent runs have natural progression, not round intervals"
+            echo "     This indicates synthetic timestamps"
+            WARNINGS=$((WARNINGS + 1))
+        fi
+    fi
+    
+    # 🚨 NEW: Check for rich details (real captures have search results, outputs)
+    FIRST_DETAILS_SIZE=$(jq '.annotationTrace[1].details | keys | length' ideal_trajectory.json 2>/dev/null || echo "0")
+    if [ $FIRST_DETAILS_SIZE -lt 2 ]; then
+        echo "  ⚠️  ideal_trajectory.json: Sparse details in actions"
+        echo "     Real captured trajectories have rich details (search results, file contents, outputs)"
+        WARNINGS=$((WARNINGS + 1))
     fi
     
     # Check for required action types
@@ -181,6 +222,23 @@ if [ -f "failed_trajectory.json" ]; then
         ERRORS=$((ERRORS + 1))
     fi
     
+    # 🚨 NEW: Compare timestamps to detect copy-paste
+    if [ -f "ideal_trajectory.json" ] && [ "$IDEAL_ACTIONS" -gt 0 ] && [ "$FAILED_ACTIONS" -gt 0 ]; then
+        IDEAL_FIRST_TS=$(jq -r '.annotationTrace[0].timestamp' ideal_trajectory.json 2>/dev/null)
+        FAILED_FIRST_TS=$(jq -r '.annotationTrace[0].timestamp' failed_trajectory.json 2>/dev/null)
+        
+        if [ "$IDEAL_FIRST_TS" == "$FAILED_FIRST_TS" ]; then
+            echo "  ❌ failed_trajectory.json: SAME timestamps as ideal trajectory!"
+            echo "     Ideal:  $IDEAL_FIRST_TS"
+            echo "     Failed: $FAILED_FIRST_TS"
+            echo "     This indicates failed was copied from ideal, not from a real agent run"
+            echo "     Failed trajectory MUST be from a DIFFERENT agent run with different timestamps"
+            ERRORS=$((ERRORS + 1))
+        else
+            echo "  ✅ failed_trajectory.json: Different timestamps from ideal (from different run)"
+        fi
+    fi
+    
     # Compare action counts (failed should typically have fewer)
     if [ "$IDEAL_ACTIONS" -gt 0 ] && [ "$FAILED_ACTIONS" -gt 0 ]; then
         RATIO=$(echo "scale=2; $FAILED_ACTIONS * 100 / $IDEAL_ACTIONS" | bc)
@@ -190,6 +248,11 @@ if [ -f "failed_trajectory.json" ]; then
             echo "     ✅ Failed trajectory is appropriately shorter"
         elif (( $(echo "$RATIO == 100" | bc -l) )); then
             echo "     ⚠️  Failed trajectory has same action count as ideal"
+            echo "        Real failures typically have 10-30% fewer actions"
+            WARNINGS=$((WARNINGS + 1))
+        elif (( $(echo "$RATIO > 100" | bc -l) )); then
+            echo "     ⚠️  Failed trajectory has MORE actions than ideal"
+            echo "        This is unusual - failures typically have fewer actions"
             WARNINGS=$((WARNINGS + 1))
         fi
     fi

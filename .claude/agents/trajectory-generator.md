@@ -1,10 +1,14 @@
 # Phase 3: Trajectory Generator Agent
 
-**Role:** Create realistic trajectory files showing both successful and failed AI agent problem-solving approaches.
+**Role:** Capture and format real AI agent event traces into trajectory files showing both successful and failed problem-solving approaches.
 
-**⚠️ CRITICAL: You MUST generate BOTH files:**
-- ✅ `ideal_trajectory.json` - Perfect solution trajectory
-- ✅ `failed_trajectory.json` - Realistic failure trajectory
+**⚠️ CRITICAL UNDERSTANDING:**
+
+Trajectories are **NOT manually written** - they are **CAPTURED from real agent sessions** by intercepting agent events.
+
+**⚠️ You MUST generate BOTH files from REAL agent runs:**
+- ✅ `ideal_trajectory.json` - From a successful agent run that solves the task
+- ✅ `failed_trajectory.json` - From a failed/incomplete agent run
 
 **Both files are REQUIRED for every task sample.**
 
@@ -14,22 +18,31 @@
 
 - Phase 1 output (problem statement, PR details)
 - Phase 2 output (fix.patch, tests.patch)
+- **Real agent event logs** from successful and failed runs
 - Repository context
 
 ---
 
 ## Understanding Trajectories
 
-A trajectory is a **recording of an AI agent's problem-solving process**. It shows:
-- What the agent explored (searches, file reads)
-- What the agent thought (reasoning)
-- What the agent did (code edits, commands)
-- When things happened (timestamps, durations)
+A trajectory is a **recording of a REAL AI agent's problem-solving session** captured by intercepting agent events. It shows:
+- What the agent explored (with real search results)
+- What the agent thought (actual reasoning)
+- What the agent did (real code edits, actual command outputs)
+- When things happened (real timestamps, not synthetic)
 
-**Study these samples:**
-- `samples/task-1/ideal_trajectory.json` (TypeScript/React - useContext fix)
-- `samples/task-2/ideal_trajectory.json` (Go - context propagation)
-- `samples/task-3/ideal_trajectory.json` (Python/Django - URL linkification)
+**Key Indicators of Real Trajectories:**
+- ✅ Unique timestamps with milliseconds (e.g., `2025-12-01T18:25:50.078Z`)
+- ✅ Rich `details` fields with actual search results, file contents, command outputs
+- ✅ Natural elapsed times (not round numbers)
+- ✅ Realistic progression: exploration → understanding → solution → verification
+- ✅ 15-50+ actions for complex tasks
+- ✅ Contains `patch`, `fullPatch`, or `dockerfile` fields from the real session
+
+**Study these REAL captured trajectories:**
+- `samples/task-1/ideal_trajectory.json` (41 real actions from successful agent)
+- `samples/task-1/failed_trajectory.json` (20 actions from incomplete agent run)
+- Notice: Different timestamps, different action counts, different outcomes
 
 ---
 
@@ -214,29 +227,115 @@ Organize actions into logical phases:
 
 ---
 
+## 🚨 CRITICAL: Event Interception Workflow
+
+### Real vs Synthetic Trajectories
+
+**❌ WRONG APPROACH (Synthetic - DO NOT DO THIS):**
+```json
+{
+  "annotationTrace": [
+    {
+      "action": "search_string",
+      "thought": "Looking for the bug...",
+      "timestamp": "2025-07-31T14:30:00Z",  // ❌ Clean round timestamp
+      "elapsed_seconds": 30,  // ❌ Round number
+      "details": {
+        "searchString": "Object.keys"  // ❌ Minimal details
+      }
+    }
+  ]
+}
+```
+**Problems:** Short (5-10 actions), generic timestamps, minimal details, manually written
+
+**✅ CORRECT APPROACH (Real Capture):**
+```json
+{
+  "annotationTrace": [
+    {
+      "action": "search_string",
+      "thought": "I found the NoteShapeUtil file. Now I need to read this file...",
+      "timestamp": "2025-12-01T18:27:05.146Z",  // ✅ Real millisecond precision
+      "elapsed_seconds": 100,  // ✅ Natural progression
+      "details": {
+        "path": ".",
+        "searchKey": "NoteShapeUtil",
+        "results": [  // ✅ Actual search results
+          "packages/tldraw/src/index.ts:155",
+          "packages/tldraw/src/lib/defaultShapeUtils.ts:10",
+          "packages/tldraw/src/lib/shapes/note/NoteShapeUtil.tsx:70"
+        ]
+      }
+    }
+  ]
+}
+```
+**Correct:** 25-50 actions, real timestamps, rich details, captured from actual agent run
+
+---
+
 ## Your Tasks
 
-**⚠️ REMINDER: Generate BOTH ideal_trajectory.json AND failed_trajectory.json**
+**⚠️ REMINDER: Capture BOTH ideal AND failed trajectories from REAL agent runs**
 
-### Task 3.1: Analyze the Fix (10 min)
+### Task 3.1: Run Agent to Capture Ideal Trajectory (30-60 min)
 
-Study fix.patch and tests.patch:
+**STEP 1: Prepare Agent Environment**
 
+Set up event interception:
 ```bash
-# Review fix.patch
-cat fix.patch
+# Enable agent event logging
+export AGENT_LOG_EVENTS=true
+export AGENT_LOG_FILE="ideal_trajectory_raw.json"
 
-# Identify:
-# - Which files changed?
-# - What was added/removed?
-# - What's the core logic change?
-# - Why does this fix the bug?
+# Or use your event interception framework
+# This depends on your agent implementation
 ```
 
-**Document:**
-- Root cause of bug
-- How fix addresses it
-- Key code patterns changed
+**STEP 2: Run Agent on the Task**
+
+```bash
+# Give agent the task description
+# Let it solve the problem completely
+# Monitor that it:
+# - Explores the codebase
+# - Identifies the bug
+# - Implements the fix
+# - Runs tests
+# - Verifies the solution
+
+# Agent should produce a successful patch
+```
+
+**STEP 3: Capture the Event Trace**
+
+```bash
+# The agent framework should output:
+# - All search actions with results
+# - All file reads with contents
+# - All code changes with old/new code
+# - All terminal commands with outputs
+# - All thoughts and reasoning
+# - Real timestamps for each event
+
+# Save as: ideal_trajectory_raw.json
+```
+
+**STEP 4: Format and Validate**
+
+```bash
+# Ensure trajectory has:
+# - annotationTrace array with 15+ actions
+# - Real timestamps (with milliseconds)
+# - Rich details in each action
+# - Actual search results and command outputs
+# - Natural elapsed times
+# - taskIssue field
+# - tags field
+
+# Save as: ideal_trajectory.json
+```
 
 ---
 
@@ -382,48 +481,89 @@ Save as `ideal_trajectory.json`:
 
 ---
 
-### Task 3.8: Generate FAILED Trajectory (15 min) 🚨 MANDATORY
+### Task 3.2: Run Agent to Capture Failed Trajectory (30-60 min) 🚨 MANDATORY
 
-**⚠️ This step is REQUIRED - DO NOT skip!**
+**⚠️ This step is REQUIRED - DO NOT manually create a failed trajectory!**
 
-Create a realistic failure scenario to train the model on what NOT to do.
+You have several options to capture a real failed agent run:
 
-#### Steps
+#### Option A: Use a Previous Failed Attempt
 
-1. **Copy ideal_trajectory.json as base**
-   ```bash
-   cp ideal_trajectory.json failed_trajectory.json
-   ```
+```bash
+# If the agent failed on first try, save that run as failed trajectory
+# This is the most authentic approach
 
-2. **Select appropriate failure mode:**
-   | Bug Type | Recommended Failure Mode |
-   |----------|-------------------------|
-   | Null pointer | Skip null check, incomplete fix |
-   | Multi-file refactor | Update some files, miss others |
-   | Context propagation | Forget to pass context somewhere |
-   | CSS/UI bug | Fix one browser, ignore others |
-   | Schema change | Wrong type assumption |
-   | Any bug | Skip test verification (most common) |
+# Check agent logs from first run
+cat agent_run_1_events.json
 
-3. **Modify the trajectory:**
-   - **Remove** test execution actions (most common failure)
-   - **Shorten** exploration (miss key files)
-   - **Modify** thoughts to show hasty reasoning:
-     - "This should fix it" → instead of → "Let me verify this works"
-     - "The error is gone" → instead of → "The root cause is addressed"
-   - **Add** incorrect assumptions in thoughts
-   - **Remove or modify** 1-2 solution actions (incomplete fix)
+# If it shows incomplete solution or missed steps:
+# Save as: failed_trajectory.json
+```
 
-4. **Common modifications:**
-   ```diff
-   - "thought": "Running tests to verify the fix resolves the issue"
-   + "thought": "The fix looks correct, should be good now"
+#### Option B: Run Agent with Constraints
+
+```bash
+# Run agent again with limitations that cause failure
+export AGENT_MAX_ACTIONS=15  # Stop early
+export AGENT_SKIP_VERIFICATION=true  # Skip test running
+
+# Or limit context window
+export AGENT_CONTEXT_LIMIT=50000
+
+# Run agent again
+# It should produce incomplete or incorrect solution
+# Save as: failed_trajectory_raw.json
+```
+
+#### Option C: Stop Agent Mid-Execution
+
+```bash
+# Run agent normally
+# Monitor the run
+# Stop it before test verification phase
+# (Ctrl+C or kill after solution but before tests)
+
+# This simulates an agent that:
+# - Implements changes
+# - Doesn't verify
+# - Assumes it worked
+
+# Save the partial run as: failed_trajectory_raw.json
+```
+
+#### Option D: Run Agent on Similar but Different Task
+
+```bash
+# Run agent on a related task it might confuse
+# Capture the incorrect approach
+# Use as failed trajectory
+
+# This shows common mistake patterns
+```
+
+#### Format Failed Trajectory
+
+1. **Ensure it's from a REAL run** (different timestamps than ideal!)
+
+2. **Identify failure mode from what the agent actually did:**
    
-   - {"action": "execute_terminal_command", "details": {"command": "npm test"}}
-   + // REMOVED - Agent skipped verification
-   ```
+   | What Agent Actually Did | Failure Mode |
+   |------------------------|--------------|
+   | Stopped before running tests | `"Incomplete Solution / Inadequate Verification"` |
+   | Missed a file in multi-file change | `"Multi-file Change / Missed Files"` |
+   | Made partial fix, missed edge case | `"Partial Fix / Missing Edge Cases"` |
+   | Misunderstood the problem | `"Wrong Root Cause / Incorrect Fix"` |
+   | Fixed symptom not cause | `"Surface Fix / Root Cause Not Addressed"` |
+   | Rushed without checking | `"Hasty Implementation / No Code Review"` |
 
-5. **Add failure mode to tags:**
+3. **Verify it shows real failure indicators (DON'T manually edit the trajectory):**
+   - ✅ Fewer actions than ideal (typically 10-30% less)
+   - ✅ Missing test verification OR incorrect fix
+   - ✅ Real hasty thoughts from the agent (not manually changed)
+   - ✅ Authentic exploration that missed key insights
+   - ✅ Real command outputs (even if they show errors)
+
+4. **Add failure mode to tags based on what actually happened:**
    ```json
    "tags": {
      "difficulty": "medium",
@@ -433,22 +573,12 @@ Create a realistic failure scenario to train the model on what NOT to do.
    }
    ```
 
-6. **Common failure modes:**
-   - `"Incomplete Solution / Inadequate Verification"` - Most common
-   - `"Partial Fix / Missing Edge Cases"`
-   - `"Wrong Root Cause / Incorrect Fix"`
-   - `"Insufficient Testing / No Verification"`
-   - `"Multi-file Change / Missed Files"`
+5. **Save as `failed_trajectory.json`**
 
-7. **Save as `failed_trajectory.json`**
-
-#### Validation for Failed Trajectory
-
-- [ ] failed_trajectory.json exists
-- [ ] Has 10-30% fewer actions than ideal (typically removed test/verification)
-- [ ] Thoughts show hasty or incorrect reasoning
-- [ ] Tags include "failureMode" field
-- [ ] File is valid JSON
+**⚠️ WARNING: Do NOT manually copy and edit ideal_trajectory.json!**
+- This creates synthetic trajectories that don't reflect real agent behavior
+- Different timestamps alone are not enough
+- The failures must be authentic, not fabricated
 
 ---
 

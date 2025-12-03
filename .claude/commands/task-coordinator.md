@@ -482,116 +482,111 @@ PROGRESS: [████░░░░░░] 40% Complete
 
 ---
 
-## 🔄 PHASE 3: TRAJECTORY GENERATION
+## 🔄 PHASE 3: TRAJECTORY GENERATION (Event Capture)
+
+**⚠️ CRITICAL UNDERSTANDING:** Trajectories are **NOT manually written** - they are **CAPTURED from real agent sessions** by intercepting agent events.
 
 **Reference:** Read `.claude/agents/trajectory-generator.md` for detailed guidance.
 
 **EXECUTE THESE STEPS NOW:**
 
-### Step 3.1: Analyze the Fix (5 min)
+### Step 3.1: Run Agent to Capture Ideal Trajectory (30-60 min)
 
-Read and understand:
-- `fix.patch` - what code changed?
-- `tests.patch` - what tests were added?
-- PR description - what was the bug?
-
-**Identify:**
-- Root cause of bug
-- How fix addresses it
-- Key code patterns changed
-
-### Step 3.2: Design Trajectory Structure (10 min)
-
-**Create realistic agent actions:**
-
-1. **EnvironmentSetup** (0-10 sec)
-   - `begin_interaction`
-
-2. **Exploration** (10-180 sec)
-   - 2-3 `search_string` actions
-   - 3-5 `open_file` actions
-   - Agent discovers the bug
-
-3. **Solution** (180-480 sec)
-   - `find_and_replace_code` for each change in fix.patch
-   - 2-10 edits
-
-4. **Test** (480-720 sec)
-   - `find_and_replace_code` for test changes
-   - `execute_terminal_command` to run tests
-   - 2-5 actions
-
-5. **Completion** (720-750 sec)
-   - `end_interaction`
-
-### Step 3.3: Generate Actions (15 min)
-
-For each hunk in fix.patch, create a `find_and_replace_code` action:
-
-```json
-{
-  "action": "find_and_replace_code",
-  "details": {
-    "commandType": "EDIT_FILE",
-    "context": "/app/path/to/file.java",
-    "payload": {
-      "filePath": "/app/path/to/file.java",
-      "oldCode": "    // old code with context\n    String email = customer.getEmail();\n    return gateway.charge(order, email);",
-      "newCode": "    // old code with context\n    String email = customer.getEmail();\n    if (email == null || email.isEmpty()) {\n        email = \"noreply@example.com\";\n    }\n    return gateway.charge(order, email);"
-    }
-  },
-  "thought": "Adding null check for email before using it. If email is null or empty, use default value to prevent NullPointerException.",
-  "timestamp": "2024-03-15T10:00:10Z",
-  "elapsed_seconds": 10,
-  "duration_seconds": 8,
-  "partition": "Solution"
-}
-```
-
-### Step 3.4: Create ideal_trajectory.json (5 min)
-
-```json
-{
-  "annotationTrace": [
-    { /* begin_interaction */ },
-    { /* exploration actions */ },
-    { /* solution actions */ },
-    { /* test actions */ },
-    { /* end_interaction */ }
-  ],
-  "taskIssue": "{Clear description of bug from PR}",
-  "tags": {
-    "difficulty": "easy|medium|hard",
-    "issueType": "BugFix",
-    "techTags": ["{Language}", "{Framework}"]
-  }
-}
-```
-
-### Step 3.5: Create failed_trajectory.json (10 min) 🚨 MANDATORY
-
-**⚠️ REQUIRED: Both trajectories must be generated!**
-
-Create failed trajectory by modifying ideal trajectory:
+**Enable event interception before running the agent:**
 
 ```bash
-# Copy ideal as base
-cp ideal_trajectory.json failed_trajectory.json
+# Set up event logging (adjust based on your agent framework)
+export AGENT_LOG_EVENTS=true
+export AGENT_LOG_FILE="${WORK_DIR}/ideal_trajectory_raw.json"
 
-# Modify to show common failure pattern:
-# - Remove test execution actions
-# - Shorten exploration phase
-# - Modify thoughts to show hasty reasoning
-# - Add "failureMode" to tags
+# Or configure your agent to capture:
+# - All search actions with real results
+# - All file operations with actual content
+# - All code changes with old/new code
+# - All commands with real outputs
+# - All thoughts and reasoning
+# - Real timestamps for every event
 ```
 
-**Common failure modes:**
-- `"Incomplete Solution / Inadequate Verification"` (most common - skip tests)
-- `"Partial Fix / Missing Edge Cases"`
-- `"Wrong Root Cause / Incorrect Fix"`
-- `"Multi-file Change / Missed Files"`
+**Run the agent on the task:**
 
-**Validation:**
+```bash
+cd ${WORK_DIR}/repo
+
+# Give agent the task description from metadata
+# Let agent solve it COMPLETELY:
+# - Explore codebase
+# - Identify bug
+# - Implement fix
+# - Run tests
+# - Verify solution
+
+# Capture the full event stream
+# Agent should produce: ideal_trajectory_raw.json
+```
+
+**Format and validate the captured trajectory:**
+
+```bash
+# Verify it has characteristics of REAL agent run:
+# ✅ 15+ actions (real sessions are substantial)
+# ✅ Unique millisecond timestamps
+# ✅ Rich details with actual search results
+# ✅ Real command outputs
+# ✅ Natural elapsed times (not round numbers)
+
+# Save as: ideal_trajectory.json
+```
+
+### Step 3.2: Run Agent to Capture Failed Trajectory (30-60 min) 🚨 MANDATORY
+
+**⚠️ This MUST be from a REAL agent run - NOT manually edited!**
+
+Choose one approach to capture authentic failure:
+
+**Option A: Use Previous Failed Attempt**
+```bash
+# If agent failed on first try, that's your failed trajectory
+# Check logs from earlier runs
+# Save the failed attempt as: failed_trajectory.json
+```
+
+**Option B: Run Agent with Constraints**
+```bash
+# Run agent again with limitations
+export AGENT_MAX_ACTIONS=15  # Stop early
+export AGENT_SKIP_VERIFICATION=true  # Skip test phase
+
+# Run agent - it will produce incomplete solution
+# Save as: failed_trajectory_raw.json
+```
+
+**Option C: Stop Agent Mid-Execution**
+```bash
+# Run agent normally
+# Monitor execution
+# Stop after solution but BEFORE test verification
+# (simulates agent that assumes fix works)
+
+# Save partial run as: failed_trajectory_raw.json
+```
+
+**Format failed trajectory:**
+
+```bash
+# Identify what actually went wrong in the run
+# Add appropriate failureMode to tags
+# Save as: failed_trajectory.json
+
+# ⚠️ DO NOT manually copy and edit ideal trajectory!
+# Failed trajectory must have different timestamps!
+# Failures must be authentic, not fabricated!
+```
+
+### Step 3.3: Validate Both Trajectories (15 min)
+
+**Validation commands:**
+
 ```bash
 # Verify both files exist
 [ -f ideal_trajectory.json ] || { echo "❌ Missing ideal_trajectory.json"; exit 1; }
@@ -601,30 +596,64 @@ cp ideal_trajectory.json failed_trajectory.json
 jq . ideal_trajectory.json > /dev/null || { echo "❌ Invalid ideal_trajectory.json"; exit 1; }
 jq . failed_trajectory.json > /dev/null || { echo "❌ Invalid failed_trajectory.json"; exit 1; }
 
-# Verify failed has failureMode in tags
-jq -e '.tags.failureMode' failed_trajectory.json > /dev/null || { echo "❌ Missing failureMode in failed_trajectory.json"; exit 1; }
+# Verify ideal trajectory has real characteristics
+IDEAL_ACTIONS=$(jq '.annotationTrace | length' ideal_trajectory.json)
+if [ "$IDEAL_ACTIONS" -lt 15 ]; then
+  echo "⚠️  Warning: ideal_trajectory has only $IDEAL_ACTIONS actions (expected 15+)"
+  echo "   This may indicate a synthetic rather than captured trajectory"
+fi
 
-echo "✅ Both trajectory files generated and validated"
+# Check for millisecond precision in timestamps (sign of real capture)
+FIRST_TS=$(jq -r '.annotationTrace[0].timestamp' ideal_trajectory.json)
+if [[ ! "$FIRST_TS" =~ \.[0-9]{3}Z$ ]]; then
+  echo "⚠️  Warning: Timestamps lack millisecond precision"
+  echo "   Real captured trajectories have precise timestamps like: 2025-12-01T18:27:05.146Z"
+fi
+
+# Verify failed trajectory characteristics
+FAILED_ACTIONS=$(jq '.annotationTrace | length' failed_trajectory.json)
+echo "📊 Action counts: Ideal=$IDEAL_ACTIONS, Failed=$FAILED_ACTIONS"
+
+# Verify different timestamps (proves different runs)
+IDEAL_FIRST_TS=$(jq -r '.annotationTrace[0].timestamp' ideal_trajectory.json)
+FAILED_FIRST_TS=$(jq -r '.annotationTrace[0].timestamp' failed_trajectory.json)
+if [ "$IDEAL_FIRST_TS" == "$FAILED_FIRST_TS" ]; then
+  echo "❌ ERROR: Trajectories have same timestamps!"
+  echo "   This indicates failed_trajectory was copied from ideal"
+  echo "   Failed trajectory MUST be from a different agent run"
+  exit 1
+fi
+
+# Verify failed has failureMode in tags
+jq -e '.tags.failureMode' failed_trajectory.json > /dev/null || { 
+  echo "❌ Missing failureMode in failed_trajectory.json"; 
+  exit 1; 
+}
+
+FAILURE_MODE=$(jq -r '.tags.failureMode' failed_trajectory.json)
+echo "✅ Both trajectory files validated"
+echo "   Failure mode: $FAILURE_MODE"
 ```
 
-### Step 3.7: Phase 3 Complete ✅
+### Step 3.4: Phase 3 Complete ✅
 
 **Report:**
 ```
-✅ Phase 3: Trajectory Generation - COMPLETE (35 min)
+✅ Phase 3: Trajectory Generation (Event Capture) - COMPLETE (60-120 min)
 
 Results:
-  - ideal_trajectory.json: {count} actions ✅
-  - failed_trajectory.json: {count} actions ✅ (MANDATORY)
-  - Exploration: {count} actions
-  - Solution: {count} actions
-  - Test: {count} actions
-  - Total duration: {seconds} sec (~{minutes} min)
+  - ideal_trajectory.json: {count} actions ✅ (from real agent run)
+  - failed_trajectory.json: {count} actions ✅ (from different real agent run)
+  - Both have different timestamps (proves different runs)
+  - Both have rich details (search results, command outputs)
+  - Both have natural elapsed times
   - Failure mode: {failureMode}
 
-REQUIRED Outputs (BOTH MANDATORY):
-  ✅ ideal_trajectory.json - Correct solution path
-  ✅ failed_trajectory.json - Common failure pattern with failureMode tag
+REQUIRED Outputs (BOTH MANDATORY - FROM REAL RUNS):
+  ✅ ideal_trajectory.json - Captured from successful agent session
+  ✅ failed_trajectory.json - Captured from failed/incomplete agent session
+  ✅ Different timestamps proving they're from different runs
+  ✅ Rich details showing real agent behavior
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PROGRESS: [██████░░░░] 60% Complete
