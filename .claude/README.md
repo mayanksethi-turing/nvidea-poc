@@ -7,10 +7,13 @@ This directory contains the **Task Coordinator** and specialized **Phase Agents*
 ## 🎯 Purpose
 
 Generate training samples for AI coding agents by:
-1. Analyzing GitHub repositories
-2. Extracting bug fix PRs
-3. Creating validation environments
-4. Documenting solution trajectories
+1. **Automatically analyzing** GitHub repositories
+2. **Extracting bug fix PRs** (auto-selected or specified)
+3. **Creating validation environments** (Docker-based)
+4. **Documenting solution trajectories** (step-by-step)
+5. **Validating correctness** (fail→pass cycle)
+
+**Fully autonomous** - provide a REPO_URL and Claude handles everything!
 
 ---
 
@@ -34,7 +37,7 @@ Generate training samples for AI coding agents by:
 
 ### Running in Claude (AI Agent)
 
-1. **Open `commands/task-coordinator.md` in Claude interface**
+1. **Open `commands/task-coordinator.md` in Claude interface (Agent Mode)**
 
 2. **Provide repository URL:**
    ```
@@ -42,12 +45,16 @@ Generate training samples for AI coding agents by:
    PR_NUMBER: 42  (optional)
    ```
 
-3. **Claude will orchestrate all phases automatically:**
-   - Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
-   - Each phase invokes the corresponding agent
-   - Progress reported after each phase
+3. **Claude will AUTOMATICALLY execute all phases:**
+   - ✅ **Immediately starts** without asking for confirmation
+   - ✅ **Executes all git/terminal commands** autonomously
+   - ✅ **Reads and follows agent prompts** from `.claude/agents/`
+   - ✅ **Creates all files** in `samples/task-N/`
+   - ✅ **Completes all 5 phases** sequentially (Phase 1 → 2 → 3 → 4 → 5)
+   - ✅ **Reports progress** after each phase
+   - ✅ **Runs validation** (pass → fail → pass cycle)
 
-4. **Result:** Complete sample in `samples/task-N/`
+4. **Result:** Complete, validated sample in `samples/task-N/` (~60-90 min)
 
 ---
 
@@ -178,6 +185,17 @@ Study existing samples to understand quality standards:
 - ✅ React, Vue, Next.js
 - ✅ Django, Flask, FastAPI
 - ✅ Gin, Echo, Chi
+
+---
+
+## 🤖 Key Features
+
+✨ **Fully Autonomous** - Just provide REPO_URL, Claude does everything  
+✨ **Sequential Execution** - All 5 phases run automatically  
+✨ **No Manual Intervention** - No confirmation prompts between phases  
+✨ **Self-Validating** - Ensures fail→pass cycle works  
+✨ **Multi-Language** - Detects and adapts to project type  
+✨ **Error Recovery** - Attempts retry before reporting failures  
 
 ---
 
