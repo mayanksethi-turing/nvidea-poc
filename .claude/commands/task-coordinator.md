@@ -575,11 +575,16 @@ For each hunk in fix.patch, create a `find_and_replace_code` action:
 ✅ Phase 3: Trajectory Generation - COMPLETE (25 min)
 
 Results:
-  - Total actions: {count}
+  - ideal_trajectory.json: {count} actions
+  - failed_trajectory.json: {count} actions (REQUIRED)
   - Exploration: {count} actions
   - Solution: {count} actions
   - Test: {count} actions
   - Total duration: {seconds} sec (~{minutes} min)
+
+REQUIRED Outputs:
+  ✅ ideal_trajectory.json - Correct solution path
+  ✅ failed_trajectory.json - Common failure pattern
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PROGRESS: [██████░░░░] 60% Complete
@@ -741,16 +746,28 @@ PROGRESS: [████████░░] 80% Complete
 
 ### Step 5.1: Create metadata.json (2 min)
 
+**IMPORTANT: Use detailed failure mode classification**
+
 ```json
 {
-  "author": "system-generated",
+  "author": "mayanksethi-turing",
   "repo": "{repo_url}",
   "head": "{commit_before}",
   "prNumber": "{pr_number}",
-  "failure": "BugFix",
-  "inputTokens": 0,
-  "outputTokens": 0
+  "failure": "{SPECIFIC_FAILURE_MODE}",
+  "inputTokens": {estimated_input_tokens},
+  "outputTokens": {estimated_output_tokens}
 }
+```
+
+**metadata.json Requirements:**
+- ✅ `author`: **ALWAYS "mayanksethi-turing"** (NOT "system-generated")
+- ✅ `failure`: Specific failure mode (NOT generic "BugFix")
+  - Examples: "Logic Error / Infinite Redirect Loop", "Schema Data Type Error / Type Mismatch", "Integration Error / Tight Component Coupling"
+- ✅ `inputTokens`: Calculated estimate (NOT 0)
+- ✅ `outputTokens`: Calculated estimate (NOT 0)
+
+See `.claude/agents/validator.md` Task 5.1 for complete failure mode categories.
 ```
 
 ### Step 5.2: Create Sample Directory (2 min)
@@ -855,6 +872,24 @@ Results:
   - JSON files valid: ✅
   - Patches valid: ✅
   - Validation cycle: PASS → FAIL → PASS ✅
+
+File Checklist:
+  ✅ metadata.json (with detailed failure mode & tokens)
+  ✅ fix.patch
+  ✅ tests.patch  
+  ✅ ideal_trajectory.json
+  ✅ failed_trajectory.json (REQUIRED)
+  ✅ Dockerfile
+  ✅ run.sh
+  ✅ PASS_pre_tests.log (with coverage)
+  ✅ FAIL_pre_patch.log
+  ✅ PASS_post_patch.log (with coverage)
+
+metadata.json Validation:
+  ✅ author: "mayanksethi-turing"
+  ✅ failure: Specific classification (not "BugFix")
+  ✅ inputTokens: > 0
+  ✅ outputTokens: > 0
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PROGRESS: [██████████] 100% Complete

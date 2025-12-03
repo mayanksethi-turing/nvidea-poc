@@ -459,7 +459,63 @@ elapsed_seconds += duration_seconds
 
 ---
 
+### Task 3.8: Generate failed_trajectory.json (15 min)
+
+**REQUIRED: Create a failed trajectory alongside the ideal trajectory.**
+
+#### Steps
+
+1. **Copy ideal_trajectory.json as base**
+
+2. **Select appropriate failure mode:**
+   | Bug Type | Recommended Failure Mode |
+   |----------|-------------------------|
+   | Null pointer | Skip null check, incomplete fix |
+   | Multi-file refactor | Update some files, miss others |
+   | Context propagation | Forget to pass context somewhere |
+   | CSS/UI bug | Fix one browser, ignore others |
+   | Schema change | Wrong type assumption |
+   | Any bug | Skip test verification |
+
+3. **Modify the trajectory:**
+   - **Remove** test execution actions
+   - **Shorten** exploration (miss key files)
+   - **Modify** thoughts to show hasty reasoning:
+     - "This should fix it" → instead of → "Let me verify this works"
+     - "The error is gone" → instead of → "The root cause is addressed"
+   - **Add** incorrect assumptions in thoughts
+
+4. **Common modifications:**
+   ```diff
+   - "thought": "Running tests to verify the fix resolves the issue"
+   + "thought": "The fix looks correct, should be good now"
+   
+   - {"action": "execute_terminal_command", "details": {"command": "npm test"}}
+   + // REMOVED - Agent skipped verification
+   ```
+
+5. **Save as `failed_trajectory.json`**
+
+#### Output Format
+
+```json
+{
+  "annotationTrace": [
+    // Modified actions showing failure pattern
+  ],
+  "taskIssue": "{ same as ideal }",
+  "tags": {
+    "difficulty": "{ same as ideal }",
+    "issueType": "BugFix",
+    "techTags": [ /* same */ ],
+    "failureMode": "Incomplete Solution / Inadequate Verification"
+  }
+}
+```
+
+---
+
 ## Ready to Generate!
 
-Provide Phase 1 and Phase 2 outputs, and I'll create a realistic ideal_trajectory.json.
+Provide Phase 1 and Phase 2 outputs, and I'll create realistic ideal_trajectory.json and failed_trajectory.json files.
 

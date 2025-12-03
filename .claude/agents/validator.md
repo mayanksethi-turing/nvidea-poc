@@ -16,41 +16,141 @@ All previous phase outputs:
 
 ## Your Tasks
 
-### Task 5.1: Create metadata.json (5 min)
+### Task 5.1: Create metadata.json (10 min)
 
-**Generate metadata file:**
+**Generate metadata file with DETAILED failure mode flagging:**
 
 ```json
 {
-  "author": "system-generated",
+  "author": "mayanksethi-turing",
   "repo": "{repo_url}",
   "head": "{commit_before}",
   "prNumber": "{pr_number}",
-  "failure": "BugFix",
-  "inputTokens": 0,
-  "outputTokens": 0
+  "failure": "{SPECIFIC_FAILURE_MODE}",
+  "inputTokens": {estimated_input_tokens},
+  "outputTokens": {estimated_output_tokens}
 }
 ```
 
 **Fields explained:**
-- `author`: Creator identifier (can be "system-generated" or user name)
+- `author`: **ALWAYS use "mayanksethi-turing"** (GitHub handle)
 - `repo`: Full GitHub repository URL
 - `head`: Commit SHA before the fix (this is what we clone and test against)
 - `prNumber`: Pull request number as string
-- `failure`: Type of issue ("BugFix", "NullPointer", "ValidationError", etc.)
-- `inputTokens`: Estimated tokens for problem description (can calculate later)
-- `outputTokens`: Estimated tokens for solution (can calculate later)
+- `failure`: **SPECIFIC failure mode classification** (see below)
+- `inputTokens`: Estimated tokens for problem statement + exploration (calculate from trajectory)
+- `outputTokens`: Estimated tokens for solution + verification (calculate from trajectory)
 
-**Example:**
+---
+
+#### Failure Mode Classification (REQUIRED)
+
+**DO NOT use generic labels like "BugFix"!**
+
+Choose the most specific failure mode from these categories:
+
+**Logic Errors:**
+- `Logic Error / Null Pointer Exception` - Missing null/undefined checks
+- `Logic Error / Infinite Loop` - Loop termination issues
+- `Logic Error / Infinite Redirect Loop` - Navigation/routing loops
+- `Logic Error / Off-by-One Error` - Array/index boundary issues
+- `Logic Error / Race Condition` - Timing/concurrency issues
+- `Logic Error / Incorrect Conditional` - Wrong boolean logic
+
+**Type/Schema Errors:**
+- `Schema Data Type Error / Type Mismatch` - Wrong data types in schema
+- `Type Error / Missing Type Conversion` - Failed type casting
+- `Type Error / Incorrect Interface Implementation` - Wrong API signatures
+
+**Integration Errors:**
+- `Integration Error / Missing Context Propagation` - Context not passed through layers
+- `Integration Error / Dependency Injection Failure` - DI container issues
+- `Integration Error / API Contract Violation` - Mismatched API expectations
+- `Integration Error / Tight Component Coupling` - Components too dependent on each other
+
+**UI/Frontend Errors:**
+- `CSS Inconsistency / Cross-Browser Compatibility Issue` - Browser-specific rendering
+- `UI Error / State Management Bug` - Incorrect state updates
+- `UI Error / Component Lifecycle Issue` - Mount/unmount problems
+- `UI Error / Missing Event Handler` - Unhandled user interactions
+
+**Configuration Errors:**
+- `Config Error / Environment Variable Missing` - Missing env vars
+- `Config Error / Incorrect Default Values` - Wrong defaults
+
+**Verification Failures (for failed trajectories):**
+- `Incomplete Solution / Inadequate Verification` - Didn't run tests
+- `Incomplete Solution / Partial Fix` - Fixed symptom not root cause
+- `Incomplete Solution / Missing Edge Cases` - Didn't handle all scenarios
+
+---
+
+#### Token Count Estimation
+
+**Calculate from trajectory files:**
+
+```bash
+# Input tokens (problem statement + exploration):
+# - begin_interaction thought
+# - All exploration action thoughts
+# - File content reads (estimate 100 tokens per file opened)
+
+# Output tokens (solution + verification):
+# - Solution action thoughts
+# - Code changes (count lines * 10)
+# - Test action thoughts
+# - end_interaction summary
+
+# Rough estimation formula:
+inputTokens = (thought_count * 50) + (files_opened * 100) + (problem_statement_words * 1.3)
+outputTokens = (code_lines_changed * 10) + (solution_thoughts * 50) + (test_output_estimate)
+```
+
+**Typical ranges:**
+- Simple fix: 1500-3000 input, 800-1500 output
+- Medium fix: 3000-5000 input, 1500-3000 output
+- Complex fix: 5000-10000 input, 3000-6000 output
+
+---
+
+#### Example metadata.json
+
+**Simple Schema Fix:**
 ```json
 {
-  "author": "system-generated",
-  "repo": "https://github.com/dockersamples/atsea-sample-shop-app.git",
-  "head": "abc123def456789...",
-  "prNumber": "42",
-  "failure": "NullPointerException",
-  "inputTokens": 15000,
-  "outputTokens": 8000
+  "author": "mayanksethi-turing",
+  "repo": "https://github.com/dockersamples/atsea-sample-shop-app",
+  "head": "abc123...",
+  "prNumber": "60",
+  "failure": "Schema Data Type Error / Type Mismatch",
+  "inputTokens": 2500,
+  "outputTokens": 1200
+}
+```
+
+**Complex Context Propagation:**
+```json
+{
+  "author": "mayanksethi-turing",
+  "repo": "https://github.com/bxcodec/go-clean-arch",
+  "head": "7e2d3a2b...",
+  "prNumber": "9",
+  "failure": "Integration Error / Missing Context Propagation",
+  "inputTokens": 8500,
+  "outputTokens": 4200
+}
+```
+
+**React Component Issue:**
+```json
+{
+  "author": "mayanksethi-turing",
+  "repo": "https://github.com/tldraw/tldraw",
+  "head": "8e28283d...",
+  "prNumber": "7007",
+  "failure": "Integration Error / Tight Component Coupling",
+  "inputTokens": 13600,
+  "outputTokens": 1900
 }
 ```
 
@@ -66,14 +166,143 @@ mkdir -p samples/task-$NEXT_NUM
 
 # Directory structure
 samples/task-{N}/
-├── metadata.json
-├── fix.patch
-├── tests.patch
-├── ideal_trajectory.json
-├── Dockerfile
-├── run.sh
-└── (logs will be generated by run.sh)
+├── metadata.json           # With detailed failure mode & tokens
+├── fix.patch               # Bug fix code only
+├── tests.patch             # Test changes only  
+├── ideal_trajectory.json   # How to solve correctly
+├── failed_trajectory.json  # How agents commonly fail (REQUIRED)
+├── Dockerfile              # Validation environment
+├── run.sh                  # Validation script
+├── PASS_pre_tests.log      # Initial test run WITH COVERAGE
+├── FAIL_pre_patch.log      # After tests.patch (should fail)
+└── PASS_post_patch.log     # After fix.patch (should pass) WITH COVERAGE
 ```
+
+---
+
+### Task 5.2.5: Create failed_trajectory.json (15 min)
+
+**REQUIRED: Every sample must have both ideal and failed trajectories.**
+
+The failed trajectory demonstrates common failure modes an AI agent might encounter:
+
+#### Purpose of Failed Trajectory
+- Shows realistic debugging failures
+- Demonstrates anti-patterns to avoid
+- Provides training data for failure detection
+- Contrasts with ideal trajectory
+
+#### Common Failure Patterns to Model
+
+**1. Incomplete Verification (Most Common)**
+```json
+{
+  "annotationTrace": [
+    // ... exploration and solution actions (same as ideal) ...
+    {
+      "action": "end_interaction",
+      "details": {
+        "commandType": "END_SESSION",
+        "context": "Fix applied",
+        "payload": {}
+      },
+      "thought": "The changes have been made. The bug should be fixed now.",
+      "partition": "Completion"
+    }
+    // MISSING: execute_terminal_command to run tests!
+  ]
+}
+```
+
+**2. Partial Fix (Fixed Symptom Not Root Cause)**
+```json
+{
+  "action": "find_and_replace_code",
+  "thought": "Adding a try-catch to handle the error",
+  // Wrong: Catching exception instead of fixing null check
+}
+```
+
+**3. Wrong File Modified**
+```json
+{
+  "action": "find_and_replace_code",
+  "details": {
+    "context": "/app/src/utils/helper.js",  // Wrong file!
+    // Should be /app/src/handlers/payment.js
+  }
+}
+```
+
+**4. Incomplete Refactoring**
+```json
+// Changed interface but not all implementations
+{
+  "action": "find_and_replace_code",
+  "thought": "Updated the interface to accept context",
+  // MISSING: Updates to all implementing classes
+}
+```
+
+#### Generate Failed Trajectory
+
+1. **Copy ideal_trajectory.json structure**
+2. **Choose failure mode that matches the bug type:**
+   - Logic errors → Incomplete verification
+   - Multi-file changes → Incomplete refactoring
+   - Schema changes → Wrong type assumption
+3. **Remove or modify critical actions:**
+   - Remove test execution
+   - Skip verification steps
+   - Make incorrect assumptions in thoughts
+4. **Adjust thoughts to show flawed reasoning:**
+   - "This should work" instead of "Let me verify this works"
+   - "The error is handled" instead of "The root cause is fixed"
+
+#### Failed Trajectory Template
+
+```json
+{
+  "annotationTrace": [
+    {
+      "action": "begin_interaction",
+      "details": { /* same as ideal */ },
+      "thought": "I'll fix this quickly by addressing the immediate error.",
+      "partition": "EnvironmentSetup"
+    },
+    // Exploration: Maybe fewer steps, missed key file
+    // Solution: Partial fix or wrong approach
+    // Test: MISSING or skipped
+    {
+      "action": "end_interaction",
+      "details": {
+        "commandType": "END_SESSION",
+        "context": "Applied fix",
+        "payload": {}
+      },
+      "thought": "The fix has been applied. Moving on to the next task.",
+      "partition": "Completion"
+      // Note: No verification that tests pass!
+    }
+  ],
+  "taskIssue": "{ same as ideal }",
+  "tags": {
+    "difficulty": "{ same as ideal }",
+    "issueType": "BugFix",
+    "techTags": [ /* same as ideal */ ],
+    "failureMode": "Incomplete Verification"  // ADD THIS
+  }
+}
+```
+
+#### Validation Checklist for failed_trajectory.json
+
+- [ ] Same problem statement as ideal_trajectory
+- [ ] Demonstrates realistic failure pattern
+- [ ] Thoughts show flawed reasoning (but not obviously wrong)
+- [ ] Missing verification or test execution
+- [ ] `failureMode` tag added to tags section
+- [ ] Would actually fail to fix the bug if executed
 
 ---
 
