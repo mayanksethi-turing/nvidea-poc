@@ -1,0 +1,75 @@
+diff --git a/src/pretix/base/email.py b/src/pretix/base/email.py
+index 395513286..83e850943 100644
+--- a/src/pretix/base/email.py
++++ b/src/pretix/base/email.py
+@@ -24,6 +24,7 @@ from itertools import groupby
+ from smtplib import SMTPResponseException
+ from typing import TypeVar
+ 
++import bleach
+ import css_inline
+ from django.conf import settings
+ from django.core.mail.backends.smtp import EmailBackend
+@@ -34,7 +35,10 @@ from django.utils.translation import get_language, gettext_lazy as _
+ 
+ from pretix.base.models import Event
+ from pretix.base.signals import register_html_mail_renderers
+-from pretix.base.templatetags.rich_text import markdown_compile_email
++from pretix.base.templatetags.rich_text import (
++    DEFAULT_CALLBACKS, EMAIL_RE, URL_RE, abslink_callback,
++    markdown_compile_email, truelink_callback,
++)
+ from pretix.helpers.format import SafeFormatter, format_map
+ 
+ from pretix.base.services.placeholders import (  # noqa
+@@ -139,7 +143,13 @@ class TemplateBasedMailRenderer(BaseHTMLMailRenderer):
+     def render(self, plain_body: str, plain_signature: str, subject: str, order, position, context) -> str:
+         body_md = self.compile_markdown(plain_body, context)
+         if context:
+-            body_md = format_map(body_md, context=context, mode=SafeFormatter.MODE_RICH_TO_HTML)
++            linker = bleach.Linker(
++                url_re=URL_RE,
++                email_re=EMAIL_RE,
++                callbacks=DEFAULT_CALLBACKS + [truelink_callback, abslink_callback],
++                parse_email=True
++            )
++            body_md = format_map(body_md, context=context, mode=SafeFormatter.MODE_RICH_TO_HTML, linkifier=linker)
+         htmlctx = {
+             'site': settings.PRETIX_INSTANCE_NAME,
+             'site_url': settings.SITE_URL,
+diff --git a/src/pretix/helpers/format.py b/src/pretix/helpers/format.py
+index ebbdba8eb..a79b869e5 100644
+--- a/src/pretix/helpers/format.py
++++ b/src/pretix/helpers/format.py
+@@ -45,10 +45,11 @@ class SafeFormatter(Formatter):
+     MODE_RICH_TO_PLAIN = 1
+     MODE_RICH_TO_HTML = 2
+ 
+-    def __init__(self, context, raise_on_missing=False, mode=MODE_RICH_TO_PLAIN):
++    def __init__(self, context, raise_on_missing=False, mode=MODE_RICH_TO_PLAIN, linkifier=None):
+         self.context = context
+         self.raise_on_missing = raise_on_missing
+         self.mode = mode
++        self.linkifier = linkifier
+ 
+     def get_field(self, field_name, args, kwargs):
+         return self.get_value(field_name, args, kwargs), field_name
+@@ -68,6 +69,8 @@ class SafeFormatter(Formatter):
+             value = str(value)
+             if self.mode == self.MODE_RICH_TO_HTML:
+                 value = conditional_escape(value)
++                if self.linkifier:
++                    value = self.linkifier.linkify(value)
+             return value
+ 
+     def format_field(self, value, format_spec):
+@@ -75,7 +78,7 @@ class SafeFormatter(Formatter):
+         return super().format_field(self._prepare_value(value), '')
+ 
+ 
+-def format_map(template, context, raise_on_missing=False, mode=SafeFormatter.MODE_RICH_TO_PLAIN):
++def format_map(template, context, raise_on_missing=False, mode=SafeFormatter.MODE_RICH_TO_PLAIN, linkifier=None):
+     if not isinstance(template, str):
+         template = str(template)
+-    return SafeFormatter(context, raise_on_missing, mode=mode).format(template)
++    return SafeFormatter(context, raise_on_missing, mode=mode, linkifier=linkifier).format(template)

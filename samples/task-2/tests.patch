@@ -1,0 +1,279 @@
+diff --git a/article/delivery/http/article_test.go b/article/delivery/http/article_test.go
+index 5c5dff7..aeecdbb 100644
+--- a/article/delivery/http/article_test.go
++++ b/article/delivery/http/article_test.go
+@@ -28,7 +28,7 @@ func TestFetch(t *testing.T) {
+ 	mockListArticle = append(mockListArticle, &mockArticle)
+ 	num := 1
+ 	cursor := "2"
+-	mockUCase.On("Fetch", cursor, int64(num)).Return(mockListArticle, "10", nil)
++	mockUCase.On("Fetch", mock.Anything, cursor, int64(num)).Return(mockListArticle, "10", nil)
+ 
+ 	e := echo.New()
+ 	req, err := http.NewRequest(echo.GET, "/article?num=1&cursor="+cursor, strings.NewReader(""))
+@@ -52,7 +52,7 @@ func TestFetchError(t *testing.T) {
+ 	mockUCase := new(mocks.ArticleUsecase)
+ 	num := 1
+ 	cursor := "2"
+-	mockUCase.On("Fetch", cursor, int64(num)).Return(nil, "", models.INTERNAL_SERVER_ERROR)
++	mockUCase.On("Fetch", mock.Anything, cursor, int64(num)).Return(nil, "", models.INTERNAL_SERVER_ERROR)
+ 
+ 	e := echo.New()
+ 	req, err := http.NewRequest(echo.GET, "/article?num=1&cursor="+cursor, strings.NewReader(""))
+@@ -81,7 +81,7 @@ func TestGetByID(t *testing.T) {
+ 
+ 	num := int(mockArticle.ID)
+ 
+-	mockUCase.On("GetByID", int64(num)).Return(&mockArticle, nil)
++	mockUCase.On("GetByID", mock.Anything, int64(num)).Return(&mockArticle, nil)
+ 
+ 	e := echo.New()
+ 	req, err := http.NewRequest(echo.GET, "/article/"+strconv.Itoa(int(num)), strings.NewReader(""))
+@@ -116,7 +116,7 @@ func TestStore(t *testing.T) {
+ 	j, err := json.Marshal(tempMockArticle)
+ 	assert.NoError(t, err)
+ 
+-	mockUCase.On("Store", mock.AnythingOfType("*models.Article")).Return(&mockArticle, nil)
++	mockUCase.On("Store", mock.Anything, mock.AnythingOfType("*models.Article")).Return(&mockArticle, nil)
+ 
+ 	e := echo.New()
+ 	req, err := http.NewRequest(echo.POST, "/article", strings.NewReader(string(j)))
+@@ -145,7 +145,7 @@ func TestDelete(t *testing.T) {
+ 
+ 	num := int(mockArticle.ID)
+ 
+-	mockUCase.On("Delete", int64(num)).Return(true, nil)
++	mockUCase.On("Delete", mock.Anything, int64(num)).Return(true, nil)
+ 
+ 	e := echo.New()
+ 	req, err := http.NewRequest(echo.DELETE, "/article/"+strconv.Itoa(int(num)), strings.NewReader(""))
+diff --git a/article/repository/mysqlarticle_test.go b/article/repository/mysqlarticle_test.go
+index 8a0cc96..45869d2 100644
+--- a/article/repository/mysqlarticle_test.go
++++ b/article/repository/mysqlarticle_test.go
+@@ -1,6 +1,7 @@
+ package repository_test
+ 
+ import (
++	"context"
+ 	"testing"
+ 	"time"
+ 
+@@ -26,7 +27,7 @@ func TestFetch(t *testing.T) {
+ 	a := articleRepo.NewMysqlArticleRepository(db)
+ 	cursor := "sampleCursor"
+ 	num := int64(5)
+-	list, err := a.Fetch(cursor, num)
++	list, err := a.Fetch(context.TODO(), cursor, num)
+ 	assert.NoError(t, err)
+ 	assert.Len(t, list, 2)
+ }
+@@ -46,7 +47,7 @@ func TestGetByID(t *testing.T) {
+ 	a := articleRepo.NewMysqlArticleRepository(db)
+ 
+ 	num := int64(5)
+-	anArticle, err := a.GetByID(num)
++	anArticle, err := a.GetByID(context.TODO(), num)
+ 	assert.NoError(t, err)
+ 	assert.NotNil(t, anArticle)
+ }
+@@ -75,7 +76,7 @@ func TestStore(t *testing.T) {
+ 
+ 	a := articleRepo.NewMysqlArticleRepository(db)
+ 
+-	lastId, err := a.Store(ar)
++	lastId, err := a.Store(context.TODO(), ar)
+ 	assert.NoError(t, err)
+ 	assert.Equal(t, int64(12), lastId)
+ }
+@@ -95,7 +96,7 @@ func TestGetByTitle(t *testing.T) {
+ 	a := articleRepo.NewMysqlArticleRepository(db)
+ 
+ 	title := "title 1"
+-	anArticle, err := a.GetByTitle(title)
++	anArticle, err := a.GetByTitle(context.TODO(), title)
+ 	assert.NoError(t, err)
+ 	assert.NotNil(t, anArticle)
+ }
+@@ -115,7 +116,7 @@ func TestDelete(t *testing.T) {
+ 	a := articleRepo.NewMysqlArticleRepository(db)
+ 
+ 	num := int64(12)
+-	anArticleStatus, err := a.Delete(num)
++	anArticleStatus, err := a.Delete(context.TODO(), num)
+ 	assert.NoError(t, err)
+ 	assert.True(t, anArticleStatus)
+ }
+@@ -147,7 +148,7 @@ func TestUpdate(t *testing.T) {
+ 
+ 	a := articleRepo.NewMysqlArticleRepository(db)
+ 
+-	s, err := a.Update(ar)
++	s, err := a.Update(context.TODO(), ar)
+ 	assert.NoError(t, err)
+ 	assert.NotNil(t, s)
+ }
+diff --git a/article/usecase/articleucase_test.go b/article/usecase/articleucase_test.go
+index 4a15d55..6ad4ab9 100644
+--- a/article/usecase/articleucase_test.go
++++ b/article/usecase/articleucase_test.go
+@@ -1,9 +1,11 @@
+ package usecase_test
+ 
+ import (
++	"context"
+ 	"errors"
+ 	"strconv"
+ 	"testing"
++	"time"
+ 
+ 	"github.com/bxcodec/go-clean-arch/article/mocks"
+ 	ucase "github.com/bxcodec/go-clean-arch/article/usecase"
+@@ -22,43 +24,43 @@ func TestFetch(t *testing.T) {
+ 
+ 	mockListArtilce := make([]*models.Article, 0)
+ 	mockListArtilce = append(mockListArtilce, mockArticle)
+-	mockArticleRepo.On("Fetch", mock.AnythingOfType("string"), mock.AnythingOfType("int64")).Return(mockListArtilce, nil)
++	mockArticleRepo.On("Fetch", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("int64")).Return(mockListArtilce, nil)
+ 	mockAuthor := &models.Author{
+ 		ID:   1,
+ 		Name: "Iman Tumorang",
+ 	}
+ 	mockAuthorrepo := new(_authorMock.AuthorRepository)
+-	mockAuthorrepo.On("GetByID", mock.AnythingOfType("int64")).Return(mockAuthor, nil)
+-	u := ucase.NewArticleUsecase(mockArticleRepo, mockAuthorrepo)
++	mockAuthorrepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(mockAuthor, nil)
++	u := ucase.NewArticleUsecase(mockArticleRepo, mockAuthorrepo, time.Second*2)
+ 	num := int64(1)
+ 	cursor := "12"
+-	list, nextCursor, err := u.Fetch(cursor, num)
++	list, nextCursor, err := u.Fetch(context.TODO(), cursor, num)
+ 	cursorExpected := strconv.Itoa(int(mockArticle.ID))
+ 	assert.Equal(t, cursorExpected, nextCursor)
+ 	assert.NotEmpty(t, nextCursor)
+ 	assert.NoError(t, err)
+ 	assert.Len(t, list, len(mockListArtilce))
+ 
+-	mockArticleRepo.AssertCalled(t, "Fetch", mock.AnythingOfType("string"), mock.AnythingOfType("int64"))
+-
++	mockArticleRepo.AssertExpectations(t)
++	mockAuthorrepo.AssertExpectations(t)
+ }
+ 
+ func TestFetchError(t *testing.T) {
+ 	mockArticleRepo := new(mocks.ArticleRepository)
+ 
+-	mockArticleRepo.On("Fetch", mock.AnythingOfType("string"), mock.AnythingOfType("int64")).Return(nil, errors.New("Unexpexted Error"))
++	mockArticleRepo.On("Fetch", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("int64")).Return(nil, errors.New("Unexpexted Error"))
+ 
+ 	mockAuthorrepo := new(_authorMock.AuthorRepository)
+-	u := ucase.NewArticleUsecase(mockArticleRepo, mockAuthorrepo)
++	u := ucase.NewArticleUsecase(mockArticleRepo, mockAuthorrepo, time.Second*2)
+ 	num := int64(1)
+ 	cursor := "12"
+-	list, nextCursor, err := u.Fetch(cursor, num)
++	list, nextCursor, err := u.Fetch(context.TODO(), cursor, num)
+ 
+ 	assert.Empty(t, nextCursor)
+ 	assert.Error(t, err)
+ 	assert.Len(t, list, 0)
+-	mockArticleRepo.AssertCalled(t, "Fetch", mock.AnythingOfType("string"), mock.AnythingOfType("int64"))
+-
++	mockArticleRepo.AssertExpectations(t)
++	mockAuthorrepo.AssertExpectations(t)
+ }
+ 
+ func TestGetByID(t *testing.T) {
+@@ -68,22 +70,23 @@ func TestGetByID(t *testing.T) {
+ 		Content: "Content",
+ 	}
+ 
+-	mockArticleRepo.On("GetByID", mock.AnythingOfType("int64")).Return(&mockArticle, nil)
+-	defer mockArticleRepo.AssertCalled(t, "GetByID", mock.AnythingOfType("int64"))
++	mockArticleRepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(&mockArticle, nil)
+ 
+ 	mockAuthor := &models.Author{
+ 		ID:   1,
+ 		Name: "Iman Tumorang",
+ 	}
+ 	mockAuthorrepo := new(_authorMock.AuthorRepository)
+-	mockAuthorrepo.On("GetByID", mock.AnythingOfType("int64")).Return(mockAuthor, nil)
+-	u := ucase.NewArticleUsecase(mockArticleRepo, mockAuthorrepo)
++	mockAuthorrepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(mockAuthor, nil)
++	u := ucase.NewArticleUsecase(mockArticleRepo, mockAuthorrepo, time.Second*2)
+ 
+-	a, err := u.GetByID(mockArticle.ID)
++	a, err := u.GetByID(context.TODO(), mockArticle.ID)
+ 
+ 	assert.NoError(t, err)
+ 	assert.NotNil(t, a)
+ 
++	mockArticleRepo.AssertExpectations(t)
++	mockAuthorrepo.AssertExpectations(t)
+ }
+ 
+ func TestStore(t *testing.T) {
+@@ -96,13 +99,13 @@ func TestStore(t *testing.T) {
+ 	tempMockArticle := mockArticle
+ 	tempMockArticle.ID = 0
+ 
+-	mockArticleRepo.On("GetByTitle", mock.AnythingOfType("string")).Return(nil, models.NOT_FOUND_ERROR)
+-	mockArticleRepo.On("Store", mock.AnythingOfType("*models.Article")).Return(mockArticle.ID, nil)
++	mockArticleRepo.On("GetByTitle", mock.Anything, mock.AnythingOfType("string")).Return(nil, models.NOT_FOUND_ERROR)
++	mockArticleRepo.On("Store", mock.Anything, mock.AnythingOfType("*models.Article")).Return(mockArticle.ID, nil)
+ 
+ 	mockAuthorrepo := new(_authorMock.AuthorRepository)
+-	u := ucase.NewArticleUsecase(mockArticleRepo, mockAuthorrepo)
++	u := ucase.NewArticleUsecase(mockArticleRepo, mockAuthorrepo, time.Second*2)
+ 
+-	a, err := u.Store(&tempMockArticle)
++	a, err := u.Store(context.TODO(), &tempMockArticle)
+ 
+ 	assert.NoError(t, err)
+ 	assert.NotNil(t, a)
+@@ -117,18 +120,18 @@ func TestDelete(t *testing.T) {
+ 		Content: "Content",
+ 	}
+ 
+-	mockArticleRepo.On("GetByID", mock.AnythingOfType("int64")).Return(&mockArticle, models.NOT_FOUND_ERROR)
+-	defer mockArticleRepo.AssertCalled(t, "GetByID", mock.AnythingOfType("int64"))
++	mockArticleRepo.On("GetByID", mock.Anything, mock.AnythingOfType("int64")).Return(&mockArticle, models.NOT_FOUND_ERROR)
+ 
+-	mockArticleRepo.On("Delete", mock.AnythingOfType("int64")).Return(true, nil)
+-	defer mockArticleRepo.AssertCalled(t, "Delete", mock.AnythingOfType("int64"))
++	mockArticleRepo.On("Delete", mock.Anything, mock.AnythingOfType("int64")).Return(true, nil)
+ 
+ 	mockAuthorrepo := new(_authorMock.AuthorRepository)
+-	u := ucase.NewArticleUsecase(mockArticleRepo, mockAuthorrepo)
++	u := ucase.NewArticleUsecase(mockArticleRepo, mockAuthorrepo, time.Second*2)
+ 
+-	a, err := u.Delete(mockArticle.ID)
++	a, err := u.Delete(context.TODO(), mockArticle.ID)
+ 
+ 	assert.NoError(t, err)
+ 	assert.True(t, a)
++	mockArticleRepo.AssertExpectations(t)
++	mockAuthorrepo.AssertExpectations(t)
+ 
+ }
+diff --git a/author/repository/mysql_test.go b/author/repository/mysql_test.go
+index bcabc77..8417e87 100644
+--- a/author/repository/mysql_test.go
++++ b/author/repository/mysql_test.go
+@@ -1,6 +1,7 @@
+ package repository_test
+ 
+ import (
++	"context"
+ 	"testing"
+ 	"time"
+ 
+@@ -26,7 +27,7 @@ func TestGetByID(t *testing.T) {
+ 
+ 	a := repository.NewMysqlAuthorRepository(db)
+ 
+-	anArticle, err := a.GetByID(userID)
++	anArticle, err := a.GetByID(context.TODO(), userID)
+ 	assert.NoError(t, err)
+ 	assert.NotNil(t, anArticle)
+ }

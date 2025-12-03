@@ -1,0 +1,74 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-8.4.2, pluggy-1.6.0
+django: version: 4.2.27, settings: tests.settings (from env)
+rootdir: /pretix/src
+configfile: setup.cfg
+plugins: mock-3.15.1, django-4.11.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0, sugar-1.1.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 12 items
+
+tests/base/test_mail.py ...........F                                     [100%]
+
+=================================== FAILURES ===================================
+_________________ test_placeholder_html_rendering_from_string __________________
+
+env = (<Event: <strong>event & co. kg</strong>>, <User: dummy@dummy.dummy>, <Organizer: Dummy>)
+
+    @pytest.mark.django_db
+    def test_placeholder_html_rendering_from_string(env):
+        template = LazyI18nString({
+            "en": "Event name: {event}\n\nPayment info:\n{payment_info}\n\n**Meta**: {meta_Test}\n\n"
+                  "Event website: [{event}](https://example.org/{event_slug})\n\n"
+                  "Other website: [{event}]({meta_Website})\n\n"
+                  "URL: {url}\n\n"
+                  "URL with text: <a href=\"{url}\">Test</a>"
+        })
+        djmail.outbox = []
+        event, user, organizer = env
+        event.name = "<strong>event & co. kg</strong>"
+        event.save()
+        ctx = get_email_context(
+            event=event,
+            payment_info="**IBAN**: 123  \n**BIC**: 456",
+        )
+        ctx["url"] = "https://google.com"
+        mail('dummy@dummy.dummy', '{event} Test subject', template, ctx, event)
+
+        assert len(djmail.outbox) == 1
+        assert djmail.outbox[0].to == [user.email]
+        assert 'Event name: <strong>event & co. kg</strong>' in djmail.outbox[0].body
+        assert 'Event website: [<strong>event & co. kg</strong>](https://example.org/dummy)' in djmail.outbox[0].body
+        assert 'Other website: [<strong>event & co. kg</strong>](https://example.com)' in djmail.outbox[0].body
+        assert '**IBAN**: 123  \n**BIC**: 456' in djmail.outbox[0].body
+        assert '**Meta**: *Beep*' in djmail.outbox[0].body
+        assert 'URL: https://google.com' in djmail.outbox[0].body
+        assert 'URL with text: <a href="https://google.com">Test</a>' in djmail.outbox[0].body
+        assert '&lt;' not in djmail.outbox[0].body
+        assert '&amp;' not in djmail.outbox[0].body
+        html = _extract_html(djmail.outbox[0])
+        assert '<strong>event' not in html
+        assert 'Event name: &lt;strong&gt;event &amp; co. kg&lt;/strong&gt;' in html
+        assert '<strong>IBAN</strong>: 123<br/>\n<strong>BIC</strong>: 456' in html
+        assert '<strong>Meta</strong>: <em>Beep</em>' in html
+        assert re.search(
+            r'Event website: <a href="https://example.org/dummy" rel="noopener" style="[^"]+" target="_blank">&lt;strong&gt;event &amp; co. kg&lt;/strong&gt;</a>',
+            html
+        )
+        assert re.search(
+            r'Other website: <a href="https://example.com" rel="noopener" style="[^"]+" target="_blank">&lt;strong&gt;event &amp; co. kg&lt;/strong&gt;</a>',
+            html
+        )
+>       assert re.search(
+            r'URL: <a href="https://google.com" rel="noopener" style="[^"]+" target="_blank">https://google.com</a>',
+            html
+        )
+E       assert None
+E        +  where None = <function search at 0xffffa57adbc0>('URL: <a href="https://google.com" rel="noopener" style="[^"]+" target="_blank">https://google.com</a>', '<!DOCTYPE html>\n<html><head>\n<meta charset="utf-8"/>\n<meta content="width=device-width, initial-scale=1.0" name="v...>\n<br/>\n<br/>\n<!--[if gte mso 9]>\n    </td></tr></table>\n    </td></tr></table>\n    <![endif]-->\n</body></html>')
+E        +    where <function search at 0xffffa57adbc0> = re.search
+
+tests/base/test_mail.py:267: AssertionError
+----------------------------- Captured stderr call -----------------------------
+INFO 2025-12-02 19:51:11,215 celery.app.trace trace Task pretix.base.services.mail.mail_send_task[cf69f9b1-a6ef-4105-9ade-ab97927021c9] succeeded in 0.0027234590088482946s: None
+------------------------------ Captured log call -------------------------------
+INFO     celery.app.trace:trace.py:128 Task pretix.base.services.mail.mail_send_task[cf69f9b1-a6ef-4105-9ade-ab97927021c9] succeeded in 0.0027234590088482946s: None
+========================= 1 failed, 11 passed in 1.64s =========================

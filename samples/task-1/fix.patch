@@ -1,0 +1,91 @@
+diff --git a/internal/config/vitest/setup.ts b/internal/config/vitest/setup.ts
+index 750de49a4..4042c1dee 100644
+--- a/internal/config/vitest/setup.ts
++++ b/internal/config/vitest/setup.ts
+@@ -40,6 +40,15 @@ if (typeof globalThis.crypto === 'undefined') {
+ 	globalThis.crypto = new Crypto()
+ }
+
++// CSS.supports polyfill for tests
++if (typeof CSS === 'undefined') {
++	// @ts-expect-error - polyfill
++	globalThis.CSS = {}
++}
++if (typeof CSS.supports === 'undefined') {
++	CSS.supports = () => false
++}
++
+ // Image.decode polyfill - this should be handled by individual package setups,
+ // but including it here as a fallback
+ if (typeof HTMLImageElement !== 'undefined') {
+diff --git a/packages/tldraw/src/index.ts b/packages/tldraw/src/index.ts
+index 25d147c54..8bbc1236c 100644
+--- a/packages/tldraw/src/index.ts
++++ b/packages/tldraw/src/index.ts
+@@ -655,6 +655,7 @@ export {
+ export { type TLUiTranslationKey } from './lib/ui/hooks/useTranslation/TLUiTranslationKey'
+ export { type TLUiTranslation } from './lib/ui/hooks/useTranslation/translations'
+ export {
++	TranslationsContext,
+ 	useCurrentTranslation,
+ 	useTranslation,
+ 	type TLUiTranslationContextType,
+diff --git a/packages/tldraw/src/lib/shapes/note/NoteShapeUtil.tsx b/packages/tldraw/src/lib/shapes/note/NoteShapeUtil.tsx
+index a105f48e8..830a23849 100644
+--- a/packages/tldraw/src/lib/shapes/note/NoteShapeUtil.tsx
++++ b/packages/tldraw/src/lib/shapes/note/NoteShapeUtil.tsx
+@@ -31,9 +31,9 @@ import {
+ 	useEditor,
+ 	useValue,
+ } from '@tldraw/editor'
+-import { useCallback } from 'react'
++import { useCallback, useContext } from 'react'
+ import { startEditingShapeWithLabel } from '../../tools/SelectTool/selectHelpers'
+-import { useCurrentTranslation } from '../../ui/hooks/useTranslation/useTranslation'
++import { TranslationsContext } from '../../ui/hooks/useTranslation/useTranslation'
+ import {
+ 	isEmptyRichText,
+ 	renderHtmlFromRichTextForMeasurement,
+@@ -493,7 +493,7 @@ function getLabelSize(editor: Editor, shape: TLNoteShape) {
+
+ function useNoteKeydownHandler(id: TLShapeId) {
+ 	const editor = useEditor()
+-	const translation = useCurrentTranslation()
++	const translation = useContext(TranslationsContext)
+
+ 	return useCallback(
+ 		(e: KeyboardEvent) => {
+@@ -512,7 +512,7 @@ function useNoteKeydownHandler(id: TLShapeId) {
+ 				// tab controls x axis (shift inverts direction set by RTL)
+ 				// cmd enter is the y axis (shift inverts direction)
+ 				const isRTL = !!(
+-					translation.dir === 'rtl' ||
++					translation?.dir === 'rtl' ||
+ 					// todo: can we check a partial of the text, so that we don't have to render the whole thing?
+ 					isRightToLeftLanguage(renderPlaintextFromRichText(editor, shape.props.richText))
+ 				)
+@@ -540,7 +540,7 @@ function useNoteKeydownHandler(id: TLShapeId) {
+ 				}
+ 			}
+ 		},
+-		[id, editor, translation.dir]
++		[id, editor, translation?.dir]
+ 	)
+ }
+
+diff --git a/packages/tldraw/src/lib/ui/hooks/useTranslation/useTranslation.tsx b/packages/tldraw/src/lib/ui/hooks/useTranslation/useTranslation.tsx
+index 77e9b4161..4c9bed1d6 100644
+--- a/packages/tldraw/src/lib/ui/hooks/useTranslation/useTranslation.tsx
++++ b/packages/tldraw/src/lib/ui/hooks/useTranslation/useTranslation.tsx
+@@ -23,7 +23,10 @@ export interface TLUiTranslationProviderProps {
+ /** @public */
+ export type TLUiTranslationContextType = TLUiTranslation
+
+-const TranslationsContext = React.createContext<TLUiTranslationContextType | null>(null)
++/**
++ * @internal
++ */
++export const TranslationsContext = React.createContext<TLUiTranslationContextType | null>(null)
+
+ /** @public */
+ export function useCurrentTranslation() {

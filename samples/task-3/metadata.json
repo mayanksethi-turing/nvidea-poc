@@ -1,0 +1,10 @@
+{
+	"author": "mohit-bairagi-turing",
+	"repo": "https://github.com/pretix/pretix",
+	"head": "fdd34f387ad2e65a59650eefe3768913fc9a963d",
+	"prNumber": "5663",
+	"failure": "Missing URL linkification",
+	"inputTokens": 13600,
+	"outputTokens": 1900000
+
+}

@@ -1,0 +1,12 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-8.4.2, pluggy-1.6.0
+django: version: 4.2.27, settings: tests.settings (from env)
+rootdir: /pretix/src
+configfile: setup.cfg
+plugins: mock-3.15.1, django-4.11.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0, sugar-1.1.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 12 items
+
+tests/base/test_mail.py ............                                     [100%]
+
+============================== 12 passed in 1.23s ==============================
