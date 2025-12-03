@@ -1,9 +1,9 @@
 {
-  "author": "system-generated",
+  "author": "mayanksethi-turing",
   "repo": "https://github.com/plausible/analytics",
   "head": "3eaa960630989436340040503b706ee925becae5",
   "prNumber": "5897",
-  "failure": "BugFix",
-  "inputTokens": 0,
-  "outputTokens": 0
+  "failure": "CSS Inconsistency / Cross-Browser Compatibility Issue",
+  "inputTokens": 3200,
+  "outputTokens": 1800
 }

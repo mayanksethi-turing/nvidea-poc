@@ -1,9 +1,9 @@
 {
-  "author": "system-generated",
+  "author": "mayanksethi-turing",
   "repo": "https://github.com/umami-software/umami",
   "head": "a645dc7ba5cd37ef75498aec1f84f13a6fdcf190",
   "prNumber": "3803",
-  "failure": "BugFix",
-  "inputTokens": 0,
-  "outputTokens": 0
+  "failure": "Logic Error / Infinite Redirect Loop",
+  "inputTokens": 3500,
+  "outputTokens": 2100
 }

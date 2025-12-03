@@ -1,9 +1,9 @@
 {
-  "author": "system-generated",
+  "author": "mayanksethi-turing",
   "repo": "https://github.com/dockersamples/atsea-sample-shop-app",
   "head": "master",
   "prNumber": "60",
-  "failure": "BugFix",
-  "inputTokens": 0,
-  "outputTokens": 0
+  "failure": "Schema Data Type Error / Type Mismatch",
+  "inputTokens": 2500,
+  "outputTokens": 1200
 }
