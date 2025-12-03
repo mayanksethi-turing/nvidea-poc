@@ -10,11 +10,20 @@
 
 ### 🔓 Permissions Configuration
 
-**Local Settings:** `.claude/local.settings.json` is configured with:
-- ✅ **Auto-approve all permissions** (network, git_write, all)
-- ✅ **Bypass sandbox restrictions**
+**Local Settings:** `.claude/settings.local.json` is configured with:
+```json
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  }
+}
+```
+
+This setting:
+- ✅ **Bypasses all permission prompts** automatically
+- ✅ **No sandbox restrictions**
 - ✅ **No confirmation prompts**
-- ✅ **Autonomous execution enabled**
+- ✅ **Enables fully autonomous execution**
 
 **When running commands, always request ALL required permissions:**
 ```
@@ -887,7 +896,7 @@ run_terminal_cmd(
 - ✅ Git write access for commits, checkouts, branches
 - ✅ Full filesystem access without sandbox restrictions
 
-**Local settings (`.claude/local.settings.json`) auto-approve all permissions.**
+**Local settings (`.claude/settings.local.json`) auto-approve all permissions.**
 
 ---
 

@@ -24,3 +24,7 @@ Thumbs.db
 *.tmp
 *.bak
 
+# Local settings (user-specific)
+settings.local.json
+.claude/settings.local.json
+

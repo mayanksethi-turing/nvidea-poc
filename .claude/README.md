@@ -29,7 +29,7 @@ Generate training samples for AI coding agents by:
 │   ├── trajectory-generator.md # Phase 3: Generate solution steps
 │   ├── docker-builder.md     # Phase 4: Create Docker environment
 │   └── validator.md          # Phase 5: Validate complete sample
-└── local.settings.json       # Auto-approve all permissions
+└── settings.local.json       # Bypass all permissions
 ```
 
 ---
@@ -203,12 +203,21 @@ Study existing samples to understand quality standards:
 
 ## 🔓 Permissions Configuration
 
-The `.claude/local.settings.json` file is configured to:
+The `.claude/settings.local.json` file is configured to:
 
-- ✅ **Auto-approve all permissions** (network, git_write, all)
-- ✅ **Bypass sandbox restrictions** for full filesystem access
-- ✅ **Disable confirmation prompts** for autonomous execution
-- ✅ **Enable auto-execution mode** for immediate command execution
+```json
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  }
+}
+```
+
+This setting:
+- ✅ **Bypasses all permission prompts** automatically
+- ✅ **No sandbox restrictions** for full filesystem access
+- ✅ **No confirmation prompts** for autonomous execution
+- ✅ **Immediate command execution** without user approval
 
 This ensures Claude can execute all commands without waiting for user approval.
 
