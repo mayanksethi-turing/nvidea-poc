@@ -1,0 +1,72 @@
+{
+  "taskId": "task-15",
+  "repositoryUrl": "https://github.com/pmacik/go-webapp-sample-with-dockerfile",
+  "bugDescription": "Swagger UI inaccessible when static contents enabled",
+  "timestamp": "2025-12-04T06:21:00.000Z",
+  "tags": {
+    "language": "go",
+    "framework": "echo",
+    "bugType": "Configuration / Middleware Routing Conflict",
+    "failureMode": "Wrong Root Cause / Skipped Verification"
+  },
+  "annotationTrace": [
+    {
+      "timestamp": "2025-12-04T06:21:00.456Z",
+      "action": "search",
+      "details": {
+        "query": "router and config files",
+        "results": ["./config/config.go", "./main.go", "./router/router.go"],
+        "reasoning": "Need to find where swagger and static contents are configured"
+      }
+    },
+    {
+      "timestamp": "2025-12-04T06:21:12.234Z",
+      "action": "read",
+      "details": {
+        "files": ["/tmp/sample-creation-1764809050/repo/router/router.go", "/tmp/sample-creation-1764809050/repo/config/config.go"],
+        "reasoning": "Understanding routing setup and configuration structure"
+      }
+    },
+    {
+      "timestamp": "2025-12-04T06:21:25.678Z",
+      "action": "read",
+      "details": {
+        "files": ["/tmp/sample-creation-1764809050/repo/main.go"],
+        "reasoning": "Check main application initialization order"
+      }
+    },
+    {
+      "timestamp": "2025-12-04T06:21:38.912Z",
+      "action": "read",
+      "details": {
+        "files": ["/tmp/sample-creation-1764809050/repo/middleware/middleware.go"],
+        "reasoning": "Examine static contents middleware implementation"
+      }
+    },
+    {
+      "timestamp": "2025-12-04T06:21:52.345Z",
+      "action": "read",
+      "details": {
+        "files": ["/tmp/sample-creation-1764809050/repo/application.develop.yml"],
+        "reasoning": "Check swagger path configuration"
+      }
+    },
+    {
+      "timestamp": "2025-12-04T06:22:15.567Z",
+      "action": "analyze",
+      "details": {
+        "findings": "Noticed that router.Init is called after middleware initialization, which might cause routing order issues",
+        "reasoning": "The static middleware might be catching requests before specific routes are registered"
+      }
+    },
+    {
+      "timestamp": "2025-12-04T06:22:34.890Z",
+      "action": "edit",
+      "details": {
+        "file": "/tmp/sample-creation-1764809050/repo/main.go",
+        "changes": "Moved router.Init before StaticContentsMiddleware to change routing order",
+        "reasoning": "Believed that registering routes before static middleware would fix precedence issue"
+      }
+    }
+  ]
+}

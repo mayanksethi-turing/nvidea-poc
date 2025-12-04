@@ -1,0 +1,9 @@
+{
+  "author": "mayanksethi-turing",
+  "repo": "https://github.com/jsventures/instldraw",
+  "head": "90ed8b8b4dd45ae36395ca7aadb713aabff6de77",
+  "prNumber": 2,
+  "failure": "Naming Consistency Error / Schema Reference Mismatch",
+  "inputTokens": 3200,
+  "outputTokens": 1500
+}

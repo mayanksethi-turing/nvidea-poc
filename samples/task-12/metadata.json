@@ -1,0 +1,9 @@
+{
+  "author": "mayanksethi-turing",
+  "repo": "https://github.com/TriliumNext/Trilium",
+  "head": "732494dfc51286926d86d49a73d3915a4aa22ef9",
+  "prNumber": 7899,
+  "failure": "Logic Error / Event Handler Misplacement",
+  "inputTokens": 4500,
+  "outputTokens": 1800
+}

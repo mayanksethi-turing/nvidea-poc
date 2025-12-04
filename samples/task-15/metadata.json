@@ -1,0 +1,9 @@
+{
+  "author": "mayanksethi-turing",
+  "repo": "https://github.com/pmacik/go-webapp-sample-with-dockerfile",
+  "head": "b06712592512e22ddc75e12f119afa6f9fd5f7fb",
+  "prNumber": "N/A",
+  "failure": "Integration Error / Middleware Routing Conflict",
+  "inputTokens": 8500,
+  "outputTokens": 2200
+}

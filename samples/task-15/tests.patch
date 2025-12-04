@@ -1,0 +1,10 @@
+diff --git a/controller/swagger_test.go b/controller/swagger_test.go
+index 939669a..4397a5b 100644
+--- a/controller/swagger_test.go
++++ b/controller/swagger_test.go
+@@ -21,4 +21,5 @@ func TestSwagger(t *testing.T) {
+ 	router.ServeHTTP(rec, req)
+ 
+ 	assert.Equal(t, http.StatusOK, rec.Code)
++	assert.Regexp(t, "Swagger UI", rec.Body.String())
+ }

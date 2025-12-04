@@ -1,0 +1,80 @@
+{
+  "taskId": "task-14-failed",
+  "status": "failed",
+  "tags": {
+    "difficulty": "easy",
+    "bugType": "Schema Data Type Error / Type Mismatch",
+    "repository": "fastapi/full-stack-fastapi-template",
+    "prNumber": 1940,
+    "failureMode": "Wrong Fix / Changed Wrong Field"
+  },
+  "annotationTrace": [
+    {
+      "timestamp": "2025-12-04T02:15:23.456Z",
+      "actionType": "read_file",
+      "details": {
+        "path": "backend/app/core/config.py",
+        "reason": "Looking at email configuration issue"
+      },
+      "elapsedMs": 0
+    },
+    {
+      "timestamp": "2025-12-04T02:15:29.123Z",
+      "actionType": "thought",
+      "details": {
+        "reasoning": "I see the issue - there's a type problem with email fields. EMAILS_FROM_EMAIL is EmailStr and EMAILS_FROM_NAME is also EmailStr. But EMAILS_FROM_NAME gets assigned from PROJECT_NAME which is a string. Maybe the issue is that EMAILS_FROM_EMAIL should be str instead?"
+      },
+      "elapsedMs": 5667
+    },
+    {
+      "timestamp": "2025-12-04T02:15:34.789Z",
+      "actionType": "grep",
+      "details": {
+        "pattern": "EMAILS_FROM",
+        "path": "backend/app/core/config.py",
+        "results": [
+          "backend/app/core/config.py:77:    EMAILS_FROM_EMAIL: EmailStr | None = None",
+          "backend/app/core/config.py:78:    EMAILS_FROM_NAME: EmailStr | None = None"
+        ]
+      },
+      "elapsedMs": 5666
+    },
+    {
+      "timestamp": "2025-12-04T02:15:40.456Z",
+      "actionType": "edit_file",
+      "details": {
+        "path": "backend/app/core/config.py",
+        "changes": [
+          {
+            "type": "replace",
+            "lineNumber": 77,
+            "oldCode": "    EMAILS_FROM_EMAIL: EmailStr | None = None",
+            "newCode": "    EMAILS_FROM_EMAIL: str | None = None",
+            "reasoning": "Changing EMAILS_FROM_EMAIL to str to fix validation issue"
+          }
+        ]
+      },
+      "elapsedMs": 5667
+    },
+    {
+      "timestamp": "2025-12-04T02:15:46.123Z",
+      "actionType": "bash",
+      "details": {
+        "command": "cd backend && pytest",
+        "output": "...\n===== test session starts =====\n...\ncollected 42 items\n...\n===== 42 passed in 12.34s =====\n",
+        "exitCode": 0
+      },
+      "elapsedMs": 5667
+    },
+    {
+      "timestamp": "2025-12-04T02:15:51.790Z",
+      "actionType": "thought",
+      "details": {
+        "reasoning": "Tests pass, so this fix should work. Changed EMAILS_FROM_EMAIL from EmailStr to str."
+      },
+      "elapsedMs": 5667
+    }
+  ],
+  "totalDurationMs": 28334,
+  "conclusionAssessment": "Incorrect fix - changed EMAILS_FROM_EMAIL instead of EMAILS_FROM_NAME. EMAILS_FROM_EMAIL should remain EmailStr since it holds actual email addresses. The bug was in EMAILS_FROM_NAME which should be str for sender names."
+}

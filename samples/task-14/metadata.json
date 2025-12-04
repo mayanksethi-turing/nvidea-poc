@@ -1,0 +1,9 @@
+{
+  "author": "mayanksethi-turing",
+  "repo": "https://github.com/fastapi/full-stack-fastapi-template",
+  "head": "0c228d554b4f1c520b3b191c54e5b6b6a25bdaff",
+  "prNumber": 1940,
+  "failure": "Schema Data Type Error / Type Mismatch",
+  "inputTokens": 2800,
+  "outputTokens": 1200
+}

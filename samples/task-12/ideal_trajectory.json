@@ -1,0 +1,143 @@
+{
+  "taskId": "task-12",
+  "status": "success",
+  "tags": {
+    "difficulty": "medium",
+    "bugType": "Logic Error / Event Handler Misplacement",
+    "repository": "TriliumNext/Trilium",
+    "prNumber": 7899
+  },
+  "annotationTrace": [
+    {
+      "timestamp": "2025-12-04T05:46:12.234Z",
+      "actionType": "read_file",
+      "details": {
+        "path": "apps/client/src/widgets/dialogs/markdown_import.tsx",
+        "reason": "Understanding the current implementation of markdown import dialog"
+      },
+      "elapsedMs": 0
+    },
+    {
+      "timestamp": "2025-12-04T05:46:15.891Z",
+      "actionType": "thought",
+      "details": {
+        "reasoning": "The issue is that convertMarkdownToHtml() is called in onHidden handler, which runs whenever the dialog closes - including when user cancels. This causes 'import successful' message even on cancel. The fix should move the import logic to the onClick handler of the Import button."
+      },
+      "elapsedMs": 3657
+    },
+    {
+      "timestamp": "2025-12-04T05:46:18.145Z",
+      "actionType": "grep",
+      "details": {
+        "pattern": "convertMarkdownToHtml",
+        "path": "apps/client/src",
+        "results": [
+          "apps/client/src/widgets/dialogs/markdown_import.tsx:41:                    await convertMarkdownToHtml(text, editorApiRef.current);",
+          "apps/client/src/widgets/dialogs/markdown_import.tsx:8:import { convertMarkdownToHtml } from \"../../services/markdown_import\";"
+        ]
+      },
+      "elapsedMs": 2254
+    },
+    {
+      "timestamp": "2025-12-04T05:46:22.456Z",
+      "actionType": "read_file",
+      "details": {
+        "path": "apps/client/src/services/markdown_import.ts",
+        "reason": "Checking what convertMarkdownToHtml does and if it shows success messages"
+      },
+      "elapsedMs": 4311
+    },
+    {
+      "timestamp": "2025-12-04T05:46:28.723Z",
+      "actionType": "thought",
+      "details": {
+        "reasoning": "convertMarkdownToHtml likely shows a success message after converting. Currently it's called in onHidden which fires on any dialog close (cancel or submit). Need to move it to only fire on actual import action (button click or Ctrl+Enter)."
+      },
+      "elapsedMs": 6267
+    },
+    {
+      "timestamp": "2025-12-04T05:46:31.892Z",
+      "actionType": "edit_file",
+      "details": {
+        "path": "apps/client/src/widgets/dialogs/markdown_import.tsx",
+        "changes": [
+          {
+            "type": "modify",
+            "lineStart": 40,
+            "lineEnd": 40,
+            "oldCode": "            footer={<Button className=\"markdown-import-button\" text={t(\"markdown_import.import_button\")} onClick={() => setShown(false)} keyboardShortcut=\"Ctrl+Enter\" />}",
+            "newCode": "            footer={\n                <Button\n                    className=\"markdown-import-button\"\n                    text={t(\"markdown_import.import_button\")}\n                    keyboardShortcut=\"Ctrl+Enter\"\n                    onClick={async () => {\n                        setShown(false);\n                        if (editorApiRef.current) {\n                            await convertMarkdownToHtml(text, editorApiRef.current);\n                        }\n                    }}\n                />\n            }",
+            "reasoning": "Move import logic to onClick handler so it only fires when user clicks Import button"
+          }
+        ]
+      },
+      "elapsedMs": 3169
+    },
+    {
+      "timestamp": "2025-12-04T05:46:34.234Z",
+      "actionType": "edit_file",
+      "details": {
+        "path": "apps/client/src/widgets/dialogs/markdown_import.tsx",
+        "changes": [
+          {
+            "type": "modify",
+            "lineStart": 43,
+            "lineEnd": 47,
+            "oldCode": "            onHidden={async () => {\n                if (editorApiRef.current) {\n                    await convertMarkdownToHtml(text, editorApiRef.current);\n                }\n                setShown(false);",
+            "newCode": "            onHidden={() => {\n                setShown(false);",
+            "reasoning": "Remove import logic from onHidden handler since it now only happens on button click"
+          }
+        ]
+      },
+      "elapsedMs": 2342
+    },
+    {
+      "timestamp": "2025-12-04T05:46:37.567Z",
+      "actionType": "edit_file",
+      "details": {
+        "path": "apps/client/src/widgets/dialogs/markdown_import.tsx",
+        "changes": [
+          {
+            "type": "modify",
+            "lineStart": 59,
+            "lineEnd": 59,
+            "oldCode": "                        setShown(false);",
+            "newCode": "                        setShown(false);\n                        if (editorApiRef.current) {\n                            convertMarkdownToHtml(text, editorApiRef.current);\n                        }",
+            "reasoning": "Also handle Ctrl+Enter keyboard shortcut to trigger import"
+          }
+        ]
+      },
+      "elapsedMs": 3333
+    },
+    {
+      "timestamp": "2025-12-04T05:46:41.892Z",
+      "actionType": "bash",
+      "details": {
+        "command": "pnpm client:build",
+        "output": "...\nBuild successful\n...",
+        "exitCode": 0
+      },
+      "elapsedMs": 4325
+    },
+    {
+      "timestamp": "2025-12-04T05:47:15.234Z",
+      "actionType": "bash",
+      "details": {
+        "command": "pnpm client:test",
+        "output": "...\nTest Suites: 12 passed, 12 total\nTests:       45 passed, 45 total\n...",
+        "exitCode": 0
+      },
+      "elapsedMs": 33342
+    },
+    {
+      "timestamp": "2025-12-04T05:47:18.456Z",
+      "actionType": "thought",
+      "details": {
+        "reasoning": "Fix is complete. The import logic now only runs when user explicitly clicks Import or presses Ctrl+Enter, not when dialog is canceled. This prevents the 'import successful' message from showing when user cancels the import."
+      },
+      "elapsedMs": 3222
+    }
+  ],
+  "totalDurationMs": 66222,
+  "conclusionAssessment": "Successfully fixed the bug by moving convertMarkdownToHtml() call from onHidden handler to onClick handler, ensuring it only runs on explicit import action."
+}
