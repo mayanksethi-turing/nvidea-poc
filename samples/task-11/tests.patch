@@ -1,0 +1,38 @@
+diff --git a/tests/unit/sentry-fixes.test.ts b/tests/unit/sentry-fixes.test.ts
+new file mode 100644
+index 0000000..abc1234
+--- /dev/null
++++ b/tests/unit/sentry-fixes.test.ts
+@@ -0,0 +1,34 @@
++import { describe, it, expect } from 'vitest';
++import { validateRowFilters } from '../../packages/nocodb-sdk/src/lib/filter/validate-row-filters';
++
++describe('Sentry Error Fixes', () => {
++  it('should handle undefined values in filter validation', () => {
++    // Test case for: Cannot read properties of undefined (reading 'fixed')
++    const filters = [
++      {
++        fk_column_id: undefined,
++        comparison_op: 'eq',
++        value: 'test'
++      }
++    ];
++    
++    // Should not throw error
++    expect(() => validateRowFilters(filters, {})).not.toThrow();
++  });
++
++  it('should handle non-string values in split operations', () => {
++    // Test case for: ve.split is not a function
++    const filters = [
++      {
++        fk_column_id: 'col1',
++        comparison_op: 'eq',
++        value: 123 // Number instead of string
++      }
++    ];
++    
++    // Should not throw error when value is not a string
++    expect(() => validateRowFilters(filters, {})).not.toThrow();
++  });
++});

@@ -1,0 +1,9 @@
+{
+  "author": "mayanksethi-turing",
+  "repo": "https://github.com/tldraw/tldraw",
+  "head": "9b80f3a34667500077e7c83d2a7eefaf1ee2f853",
+  "prNumber": "592",
+  "failure": "Environment Configuration Error / Missing Validation",
+  "inputTokens": 8500,
+  "outputTokens": 2800
+}

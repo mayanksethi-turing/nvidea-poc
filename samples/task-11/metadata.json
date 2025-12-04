@@ -1,0 +1,9 @@
+{
+  "author": "mayanksethi-turing",
+  "repo": "https://github.com/nocodb/nocodb",
+  "head": "5e5d69464c4f0265251ec3e266348569f1744906",
+  "prNumber": "12620",
+  "failure": "Type Safety Error / Missing Null Checks",
+  "inputTokens": 12500,
+  "outputTokens": 4200
+}
