@@ -5,5 +5,189 @@
   "prNumber": "2019",
   "failure": "UI/Styling Error / Z-Index Layer Conflict",
   "inputTokens": 8500,
-  "outputTokens": 3200
+  "outputTokens": 3200,
+  "taskGoal": {
+    "summary": "Fix toast message visibility and add deployment success notifications",
+    "problemStatement": "",
+    "expectedOutcome": ""
+  },
+  "failureModeAnalysis": {
+    "failureType": "UI/Styling Error / Z-Index Layer Conflict",
+    "failureCategory": "Incomplete Implementation / Missing Global Scope",
+    "failureDescription": "",
+    "rootCause": "",
+    "consequence": "Toasts may still not appear in some contexts due to non-global ToastContainer. Missing notifications for GitHub and GitLab deployments.",
+    "issuesMissed": [
+      "Did not move ToastContainer from Chat.client.tsx to root.tsx for global scope",
+      "Did not remove duplicate ToastContainer from Chat component",
+      "Did not add success toasts to GitHubDeploy and GitLabDeploy components",
+      "Only partially fixed the deployment notifications (2 out of 4 services)"
+    ]
+  },
+  "stepLevelMetrics": {
+    "totalSteps": {
+      "idealTrajectory": 26,
+      "failedTrajectory": 15
+    },
+    "toolCallBreakdown": {
+      "idealTrajectory": {
+        "thought": 6,
+        "search": 3,
+        "read_file": 7,
+        "edit_file": 8,
+        "command": 1,
+        "completion": 1
+      },
+      "failedTrajectory": {
+        "thought": 4,
+        "search": 2,
+        "read_file": 3,
+        "edit_file": 4,
+        "command": 1,
+        "completion": 1
+      }
+    },
+    "wallTime": {
+      "idealTrajectory": {
+        "startTime": "2025-12-04T06:58:23.146Z",
+        "endTime": "2025-12-04T07:15:41.892Z",
+        "durationSeconds": 1038.746
+      },
+      "failedTrajectory": {
+        "startTime": "2025-12-03T14:22:17.384Z",
+        "endTime": "2025-12-03T14:35:29.127Z",
+        "durationSeconds": 791.743
+      }
+    },
+    "tokenCounts": {
+      "inputTokens": 8500,
+      "outputTokens": 3200,
+      "totalTokens": 11700
+    }
+  },
+  "diffSemantics": {
+    "filesChanged": 8,
+    "totalLinesAdded": 54,
+    "totalLinesRemoved": 34,
+    "modifiedFiles": [
+      "app/components/chat/Chat.client.tsx",
+      "app/components/deploy/GitHubDeploy.client.tsx",
+      "app/components/deploy/GitLabDeploy.client.tsx",
+      "app/components/deploy/NetlifyDeploy.client.tsx",
+      "app/components/deploy/VercelDeploy.client.tsx",
+      "app/root.tsx",
+      "app/styles/components/toast.scss",
+      "app/styles/z-index.scss"
+    ],
+    "changedSymbols": [
+      {
+        "file": "app/components/chat/Chat.client.tsx",
+        "symbol": "toastAnimation",
+        "type": "function"
+      },
+      {
+        "file": "app/root.tsx",
+        "symbol": "toastAnimation",
+        "type": "function"
+      }
+    ],
+    "publicAPIChanges": {
+      "added": [],
+      "modified": [],
+      "removed": []
+    }
+  },
+  "testExecution": {
+    "hasAutomatedTests": false,
+    "testType": "manual_visual",
+    "preTestStatus": {
+      "totalTests": 0,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0,
+      "coverage": null,
+      "duration": null
+    },
+    "postPatchStatus": {
+      "totalTests": 0,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0,
+      "coverage": null,
+      "duration": null
+    },
+    "coverageDelta": null,
+    "flakyTests": [],
+    "topFailingTracebacks": []
+  },
+  "navigationMetrics": {
+    "idealTrajectory": {
+      "filesOpened": 8,
+      "filesEdited": 8,
+      "editPrecision": 1.0,
+      "filesOpenedList": [
+        "app/components/chat/Chat.client.tsx",
+        "app/components/deploy/GitHubDeploy.client.tsx",
+        "app/components/deploy/GitLabDeploy.client.tsx",
+        "app/components/deploy/NetlifyDeploy.client.tsx",
+        "app/components/deploy/VercelDeploy.client.tsx",
+        "app/root.tsx",
+        "app/styles/components/toast.scss",
+        "app/styles/z-index.scss"
+      ],
+      "filesEditedList": [
+        "app/components/chat/Chat.client.tsx",
+        "app/components/deploy/GitHubDeploy.client.tsx",
+        "app/components/deploy/GitLabDeploy.client.tsx",
+        "app/components/deploy/NetlifyDeploy.client.tsx",
+        "app/components/deploy/VercelDeploy.client.tsx",
+        "app/root.tsx",
+        "app/styles/components/toast.scss",
+        "app/styles/z-index.scss"
+      ],
+      "unnecessaryFileModifications": []
+    },
+    "failedTrajectory": {
+      "filesOpened": 4,
+      "filesEdited": 4,
+      "editPrecision": 1.0,
+      "filesOpenedList": [
+        "app/components/deploy/NetlifyDeploy.client.tsx",
+        "app/components/deploy/VercelDeploy.client.tsx",
+        "app/styles/components/toast.scss",
+        "app/styles/z-index.scss"
+      ],
+      "filesEditedList": [
+        "app/components/deploy/NetlifyDeploy.client.tsx",
+        "app/components/deploy/VercelDeploy.client.tsx",
+        "app/styles/components/toast.scss",
+        "app/styles/z-index.scss"
+      ],
+      "unnecessaryFileModifications": [],
+      "missedFiles": [
+        "app/components/chat/Chat.client.tsx",
+        "app/components/deploy/GitHubDeploy.client.tsx",
+        "app/components/deploy/GitLabDeploy.client.tsx",
+        "app/root.tsx"
+      ]
+    }
+  },
+  "planAndMemorySignals": {
+    "idealTrajectory": {
+      "thoughtActionsCount": 6,
+      "planAdherence": 1.0,
+      "verificationStepsCompleted": true
+    },
+    "failedTrajectory": {
+      "thoughtActionsCount": 4,
+      "planAdherence": 0.5,
+      "verificationStepsCompleted": false
+    }
+  },
+  "tags": {
+    "language": "typescript",
+    "framework": "remix-react",
+    "bugType": "UI/Styling Bug",
+    "difficulty": "medium"
+  }
 }
