@@ -1,0 +1,160 @@
+{
+  "taskId": "transfer-encoding-case-sensitivity-fix",
+  "description": "Fix Transfer-Encoding header detection to be case-insensitive in HTTP chunked request/response handling",
+  "startTime": "2025-12-04T07:12:18.342Z",
+  "endTime": "2025-12-04T07:28:45.691Z",
+  "success": true,
+  "tags": {
+    "language": "go",
+    "framework": "keploy",
+    "bugType": "Case Sensitivity / HTTP Protocol Handling",
+    "difficulty": "medium"
+  },
+  "annotationTrace": [
+    {
+      "timestamp": "2025-12-04T07:12:18.342Z",
+      "type": "thought",
+      "content": "Need to investigate the Transfer-Encoding header handling issue. The bug report mentions that responses with 'Transfer-encoding: chunked' (lowercase 'e') are not being handled correctly."
+    },
+    {
+      "timestamp": "2025-12-04T07:12:20.891Z",
+      "type": "search",
+      "query": "Transfer-Encoding",
+      "results": [
+        "pkg/agent/proxy/integrations/http/chunk.go",
+        "pkg/agent/proxy/integrations/http/response.go"
+      ]
+    },
+    {
+      "timestamp": "2025-12-04T07:12:24.127Z",
+      "type": "read_file",
+      "path": "pkg/agent/proxy/integrations/http/chunk.go",
+      "linesRead": 315,
+      "excerpt": "Found Transfer-Encoding header handling in HandleChunkedRequests and handleChunkedResponses"
+    },
+    {
+      "timestamp": "2025-12-04T07:12:28.594Z",
+      "type": "thought",
+      "content": "I see the issue! The code uses strings.HasPrefix(line, \"Transfer-Encoding:\") which is case-sensitive. HTTP headers are case-insensitive per RFC 2616, so 'Transfer-encoding' should also be recognized."
+    },
+    {
+      "timestamp": "2025-12-04T07:12:31.847Z",
+      "type": "read_file",
+      "path": "pkg/agent/proxy/integrations/http/chunk.go",
+      "linesRead": 315,
+      "excerpt": "Lines 44-59: Request header parsing with case-sensitive prefix check"
+    },
+    {
+      "timestamp": "2025-12-04T07:12:36.291Z",
+      "type": "read_file",
+      "path": "pkg/agent/proxy/integrations/http/chunk.go",
+      "linesRead": 315,
+      "excerpt": "Lines 219-240: Response header parsing with same case-sensitive issue"
+    },
+    {
+      "timestamp": "2025-12-04T07:12:41.673Z",
+      "type": "thought",
+      "content": "The bug exists in both HandleChunkedRequests and handleChunkedResponses functions. Both use case-sensitive string matching for HTTP headers. I need to refactor the header parsing to normalize header names before comparison."
+    },
+    {
+      "timestamp": "2025-12-04T07:12:46.128Z",
+      "type": "search",
+      "query": "Content-Length",
+      "results": [
+        "pkg/agent/proxy/integrations/http/chunk.go (multiple matches)"
+      ]
+    },
+    {
+      "timestamp": "2025-12-04T07:12:49.891Z",
+      "type": "thought",
+      "content": "Content-Length header has the same case-sensitivity issue. The proper fix should normalize ALL header names to lowercase before checking, which matches HTTP specification RFC 2616 Section 4.2."
+    },
+    {
+      "timestamp": "2025-12-04T07:12:54.237Z",
+      "type": "edit_file",
+      "path": "pkg/agent/proxy/integrations/http/chunk.go",
+      "changes": "Refactored HandleChunkedRequests header parsing: Split header line on colon, normalize key with strings.ToLower, use switch statement for clean comparison",
+      "linesAdded": 20,
+      "linesRemoved": 8
+    },
+    {
+      "timestamp": "2025-12-04T07:13:04.682Z",
+      "type": "thought",
+      "content": "Good, request handling is fixed. Now need to apply the same pattern to response handling."
+    },
+    {
+      "timestamp": "2025-12-04T07:13:08.391Z",
+      "type": "edit_file",
+      "path": "pkg/agent/proxy/integrations/http/chunk.go",
+      "changes": "Refactored handleChunkedResponses header parsing with same case-insensitive approach",
+      "linesAdded": 22,
+      "linesRemoved": 12
+    },
+    {
+      "timestamp": "2025-12-04T07:13:15.847Z",
+      "type": "thought",
+      "content": "Also need to fix the chunked encoding check itself - it should use case-insensitive contains. The transferEncodingHeader value might also have mixed case."
+    },
+    {
+      "timestamp": "2025-12-04T07:13:19.294Z",
+      "type": "edit_file",
+      "path": "pkg/agent/proxy/integrations/http/chunk.go",
+      "changes": "Updated chunked encoding check to use strings.ToLower on the value: strings.Contains(strings.ToLower(transferEncodingHeader), \"chunked\")",
+      "linesAdded": 2,
+      "linesRemoved": 2
+    },
+    {
+      "timestamp": "2025-12-04T07:13:24.627Z",
+      "type": "thought",
+      "content": "Let me verify all the changes are consistent and handle edge cases like CRLF line endings."
+    },
+    {
+      "timestamp": "2025-12-04T07:13:27.891Z",
+      "type": "read_file",
+      "path": "pkg/agent/proxy/integrations/http/chunk.go",
+      "linesRead": 321,
+      "excerpt": "Verifying refactored code handles CRLF properly with strings.TrimRight"
+    },
+    {
+      "timestamp": "2025-12-04T07:13:32.184Z",
+      "type": "command",
+      "cmd": "go build ./pkg/agent/proxy/integrations/http",
+      "output": "✓ Build successful"
+    },
+    {
+      "timestamp": "2025-12-04T07:13:36.749Z",
+      "type": "thought",
+      "content": "Build passes. Let me run tests to ensure no regressions."
+    },
+    {
+      "timestamp": "2025-12-04T07:13:39.127Z",
+      "type": "command",
+      "cmd": "go test ./pkg/agent/proxy/integrations/http/...",
+      "output": "ok  \tgo.keploy.io/server/v3/pkg/agent/proxy/integrations/http\t0.142s"
+    },
+    {
+      "timestamp": "2025-12-04T07:13:43.891Z",
+      "type": "thought",
+      "content": "Tests pass. Let me verify the fix handles all the edge cases mentioned in the bug report."
+    },
+    {
+      "timestamp": "2025-12-04T07:13:47.234Z",
+      "type": "command",
+      "cmd": "git diff pkg/agent/proxy/integrations/http/chunk.go",
+      "output": "94 lines changed: +44 insertions, -22 deletions"
+    },
+    {
+      "timestamp": "2025-12-04T07:13:52.671Z",
+      "type": "thought",
+      "content": "Perfect! The fix: 1) Normalizes header names to lowercase before comparison, 2) Uses proper header parsing with colon splitting, 3) Handles both request and response headers consistently, 4) Makes chunked encoding detection case-insensitive"
+    },
+    {
+      "timestamp": "2025-12-04T07:28:45.691Z",
+      "type": "completion",
+      "message": "Successfully fixed Transfer-Encoding case sensitivity bug in HTTP header parsing",
+      "filesModified": 1,
+      "linesAdded": 44,
+      "linesRemoved": 22
+    }
+  ]
+}

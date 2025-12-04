@@ -1,0 +1,9 @@
+{
+  "author": "mayanksethi-turing",
+  "repo": "https://github.com/stackblitz-labs/bolt.diy",
+  "head": "cb3c536c5df3656001b5f87a4284edbf24294420",
+  "prNumber": "2019",
+  "failure": "UI/Styling Error / Z-Index Layer Conflict",
+  "inputTokens": 8500,
+  "outputTokens": 3200
+}

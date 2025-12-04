@@ -1,0 +1,9 @@
+{
+  "author": "mayanksethi-turing",
+  "repo": "https://github.com/m-lab/murakami",
+  "head": "dce4d06f4555e9d0f1a94573d54fc359658a789c",
+  "prNumber": "101",
+  "failure": "Uninitialized Variable Error / NameError",
+  "inputTokens": 4200,
+  "outputTokens": 1800
+}
